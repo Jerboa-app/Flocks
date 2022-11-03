@@ -1,6 +1,6 @@
-# Big Nuts Rise
+# Flocks
 
-A demo simulation of granular materials and a shaker, play with all the parrameters live!
+A demo of a few flocking models
 
 Uses C++ with SFML and OpenGL
 
@@ -9,9 +9,6 @@ Uses C++ with SFML and OpenGL
 | Function     | Keys |
 | ----------- | ----------- |
 | toggle debug menu      | F1      |
-
-![](https://github.com/Jerboa-app/BigNutsRise/blob/main/resources/demo1.gif)
-![](https://github.com/Jerboa-app/BigNutsRise/blob/main/resources/demo3.gif)
 
 ### Building
 
