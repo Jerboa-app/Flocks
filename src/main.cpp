@@ -39,7 +39,7 @@
 const int resX = 1000;
 const int resY = 1000;
 
-const int subSamples = 60;
+const int subSamples = 1;
 const float dt = (1.0 / 60.0) / subSamples;
 
 const int saveFrequency = 1;
@@ -128,11 +128,11 @@ int main(){
   //  a widget hierachy system, but won't bother for this
   //  app
 
-  Slider particlesSlider(resX-300.0,resY-64.0*3,128.0,16.0,"Particles");
+  Slider particlesSlider(16.0,resY-48.0,128.0,16.0,"Particles");
   particlesSlider.setPosition(0.5);
   particlesSlider.setProjection(textProj);
 
-  Button newRecording(resX-300.0,resY-65.0*10,16.0,16.0,"Record",30);
+  Button newRecording(128.0*2.0+16.0,resY-48.0,16.0,16.0,"Record",30);
   newRecording.setState(false);
   newRecording.setProjection(textProj);
 

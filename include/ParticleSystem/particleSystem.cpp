@@ -173,12 +173,20 @@ void ParticleSystem::step(){
   tic = clock();
 
   double cc = drag*dt/2.0;
+  double D = std::sqrt(2.0*rotationalDiffusion/dt);
 
   for (int i = 0; i < size(); i++){
+
+    noise[i*2+1] = noise[i*2];
+    noise[i*2] = normal(generator);
 
     double ct = cc/parameters[i*2+1];
     double bt = 1.0 / (1.0 + ct);
     double at = (1.0-ct)*bt;
+
+    double cr = (rotationalDrag*dt)/(2.0*momentOfInertia);
+    double br = 1.0 / (1.0 + cr);
+    double ar = (1.0-cr)*br;
 
     double x = state[i*3];
     double y = state[i*3+1];
@@ -188,11 +196,12 @@ void ParticleSystem::step(){
     double yp = lastState[i*3+1];
     double thetap = lastState[i*3+2];
 
-    double ax = forces[i*2];
-    double ay = forces[i*2+1]-9.81*parameters[i*2+1];
+    float ax = drag*speed*cos(theta)+forces[i*2];
+    float ay = drag*speed*sin(theta)+forces[i*2+1];
 
     state[i*3] = 2.0*bt*x - at*xp + (bt*dtdt/parameters[i*2+1])*ax;
     state[i*3+1] = 2.0*bt*y - at*yp + (bt*dtdt/parameters[i*2+1])*ay;
+    state[i*3+2] = 2.0*br*theta - ar*thetap + (br*dt/(2.0*momentOfInertia))*(noise[i*2]+noise[i*2+1])*dt*rotationalDrag*D;
 
     lastState[i*3] = x;
     lastState[i*3+1] = y;
@@ -245,6 +254,7 @@ void ParticleSystem::step(){
       state[i*3+2] = ang;
       state[i*3+1] = newY+uy;
       state[i*3] = newX+ux;
+      lastState[i*3+2] = state[i*3+2];
     }
   }
 

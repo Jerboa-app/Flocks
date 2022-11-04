@@ -25,12 +25,12 @@ public:
     uint64_t N,
     double dt = 1.0/300.0,
     double density = 0.25,
-    double Lx = 0.5, double Ly = 1.0,
+    double Lx = 1.0, double Ly = 0.95,
     uint64_t seed = clock()
   )
-  : nParticles(N), radius(std::sqrt(density/(N*M_PI))),speed(0),drag(0),
-    rotationalDrag(.01),mass(1.0), momentOfInertia(0.01),
-    rotationalDiffusion(0.01),dt(dt),collisionTime(10*dt),
+  : nParticles(N), radius(std::sqrt(density/(N*M_PI))),speed(std::sqrt(density/(N*M_PI))/0.2),drag(0.01),
+    rotationalDrag(.01),mass(0.01), momentOfInertia(0.01),
+    rotationalDiffusion(0.1),dt(dt),collisionTime(10*dt),
     Lx(Lx), Ly(Ly)
   {
 
@@ -70,7 +70,7 @@ public:
       }
     }
 
-    setCoeffientOfRestitution(0.95);
+    setCoeffientOfRestitution(0.5);
   }
 
   void applyForce(double fx, double fy);
