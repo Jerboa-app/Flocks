@@ -177,6 +177,51 @@ void ParticleSystem::step(){
 
   for (int i = 0; i < size(); i++){
 
+    double nx = 0.0;
+    double ny = 0.0;
+    double dtheta = 0.0;
+    if (
+      (repelDistance > 0 && repelStrength > 0) ||
+      (alignDistance > 0 && alignStrength > 0) ||
+      (attractDistance > 0 && attractStrength > 0)
+      
+      ){
+      for (int j = i+1; j < size(); j++){
+        double rx = state[j*3]-state[i*3];
+        double ry = state[j*3+1]-state[i*3+1];
+        double d2 = rx*rx+ry*ry;
+        if (d2 == 0){continue;}
+        if (repelDistance > 0.0 && d2 < repelDistance){
+          // repel
+          double d = sqrt(d2);
+          nx -= repelStrength*rx/d;
+          ny -= repelStrength*ry/d;
+        } 
+        else if (alignDistance > 0.0 && d2 < alignDistance){
+          // align
+          double vjx = velocities[j*2];
+          double vjy = velocities[j*2+1];
+          double v = std::sqrt(vjx*vjx+vjy*vjy);
+          if (v==0){continue;}
+          nx += alignStrength*vjx/v;
+          ny += alignStrength*vjy/v;
+        }
+        else if (attractDistance > 0.0 && d2 < attractDistance){
+          //attract
+          double d = sqrt(d2);
+          nx += attractStrength*rx/d;
+          ny += attractStrength*ry/d;
+        }
+      }
+
+      dtheta = std::atan2(ny,nx);
+
+      if (dtheta < 0.0){
+        dtheta = std::abs(dtheta)+M_PI;
+      }
+
+    }
+    
     noise[i*2+1] = noise[i*2];
     noise[i*2] = normal(generator);
 
@@ -196,12 +241,22 @@ void ParticleSystem::step(){
     double yp = lastState[i*3+1];
     double thetap = lastState[i*3+2];
 
-    float ax = drag*speed*cos(theta)+forces[i*2];
-    float ay = drag*speed*sin(theta)+forces[i*2+1];
+    double ax = drag*speed*cos(theta)+forces[i*2];
+    double ay = drag*speed*sin(theta)+forces[i*2+1];
+    double atheta;
+
+    if (nx == 0 && ny == 0){
+      atheta = 0.0;
+    }
+    else{
+      double phi = std::fmod(theta,2.0*M_PI);
+      if (phi < 0.0){phi += 2.0*M_PI;}
+      atheta = rotationalDrag*(dtheta-phi);
+    }
 
     state[i*3] = 2.0*bt*x - at*xp + (bt*dtdt/parameters[i*2+1])*ax;
     state[i*3+1] = 2.0*bt*y - at*yp + (bt*dtdt/parameters[i*2+1])*ay;
-    state[i*3+2] = 2.0*br*theta - ar*thetap + (br*dt/(2.0*momentOfInertia))*(noise[i*2]+noise[i*2+1])*dt*rotationalDrag*D;
+    state[i*3+2] = 2.0*br*theta - ar*thetap + (br*dtdt/momentOfInertia)*atheta + (br*dt/(2.0*momentOfInertia))*(noise[i*2]+noise[i*2+1])*dt*rotationalDrag*D;
 
     lastState[i*3] = x;
     lastState[i*3+1] = y;
@@ -313,6 +368,9 @@ void ParticleSystem::addParticle(
   forces.push_back(0.0);
   forces.push_back(0.0);
 
+  interactions.push_back(0.0);
+  interactions.push_back(0.0);
+
   velocities.push_back(0.0);
   velocities.push_back(0.0);
 
@@ -341,6 +399,12 @@ void ParticleSystem::removeParticle(uint64_t i){
       forces.begin()+2*i,
       forces.begin()+2*i+2
     );
+
+    interactions.erase(
+      interactions.begin()+2*i,
+      interactions.begin()+2*i+2
+    );
+
 
     velocities.erase(
       velocities.begin()+2*i,
