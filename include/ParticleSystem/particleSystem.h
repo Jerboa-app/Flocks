@@ -25,12 +25,14 @@ public:
     uint64_t N,
     double dt = 1.0/300.0,
     double density = 0.25,
-    double Lx = 0.5, double Ly = 1.0,
+    double Lx = 1.0, double Ly = 0.95,
     uint64_t seed = clock()
   )
-  : nParticles(N), radius(std::sqrt(density/(N*M_PI))),speed(0),drag(0),
-    rotationalDrag(.01),mass(1.0), momentOfInertia(0.01),
-    rotationalDiffusion(0.01),dt(dt),collisionTime(10*dt),
+  : nParticles(N), radius(std::sqrt(density/(N*M_PI))),speed(std::sqrt(density/(N*M_PI))/0.2),drag(0.01),
+    rotationalDrag(.01),mass(0.01), momentOfInertia(0.001),
+    rotationalDiffusion(0.1),dt(dt),collisionTime(10*dt),
+    repelDistance(0.0), alignDistance(0.0*std::sqrt(density/(N*M_PI))), attractDistance(20.0),
+    repelStrength(0.0), alignStrength(0.0), attractStrength(100.0),
     Lx(Lx), Ly(Ly)
   {
 
@@ -70,7 +72,7 @@ public:
       }
     }
 
-    setCoeffientOfRestitution(0.95);
+    setCoeffientOfRestitution(0.5);
   }
 
   void applyForce(double fx, double fy);
@@ -128,6 +130,7 @@ private:
 
   std::vector<double> forces;
   std::vector<double> velocities;
+  std::vector<double> interactions;
 
   std::vector<uint64_t> cells;
   std::vector<uint64_t> list;
@@ -158,6 +161,15 @@ private:
   double momentOfInertia;
   double dt;
   double dtdt;
+
+  double repelDistance;
+  double repelStrength;
+
+  double attractDistance;
+  double attractStrength;
+
+  double alignDistance;
+  double alignStrength;
 
   float * floatState;
 
