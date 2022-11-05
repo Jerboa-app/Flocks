@@ -34,7 +34,8 @@ void TextRenderer::renderText(
   float y,
   float scale,
   glm::vec3 colour,
-  float alpha){
+  float alpha,
+  bool centre){
     // have a look at this https://learnopengl.com/In-Practice/Text-Rendering
     // Some modifications have been made, e.g to render \n characters as line breaks
 
@@ -49,25 +50,48 @@ void TextRenderer::renderText(
     glActiveTexture(GL_TEXTURE0);
     glBindVertexArray(VAO);
 
-    float initalX = x;
+    float initialX = x;
+    float initialY = y;
+    float centreX = 0;
+    float centreY = 0;
+    std::string::const_iterator c;
+    if (centre){
+
+      // iterate through all characters
+     
+      for (c = text.begin(); c != text.end(); c++){
+          Glyph ch = type[*c];
+          float h = ch.size.y * scale;
+          if (*c == '\n') {
+              break;
+          }
+          float advance = (ch.offset >> 6) * scale;  // bitshift by 6 to get value in pixels (2^6 = 64)
+          x += advance;
+      }
+
+      centreX = (x - initialX)/2.0;
+
+      initialX -= centreX;
+      x = initialX;
+    }
 
     // iterate through all characters
-    std::string::const_iterator c;
     for (c = text.begin(); c != text.end(); c++){
         Glyph ch = type[*c];
-
-        // quick and dirty line break
-        if (*c == '\n'){
-          y -= 32.0f;
-          x = initalX;
-          continue;
-        }
 
         float xpos = x + ch.bearing.x * scale;
         float ypos = y - (ch.size.y - ch.bearing.y) * scale;
 
         float w = ch.size.x * scale;
         float h = ch.size.y * scale;
+
+                // quick and dirty line break
+        if (*c == '\n'){
+            y -= h*1.1;
+            x = initialX;
+            continue;
+        }
+        
         // update VBO for each character
         float vertices[6][4] = {
             { xpos,     ypos + h,   0.0f, 0.0f },

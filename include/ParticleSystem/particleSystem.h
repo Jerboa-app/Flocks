@@ -25,14 +25,14 @@ public:
     uint64_t N,
     double dt = 1.0/300.0,
     double density = 0.25,
-    double Lx = 1.0, double Ly = 0.95,
+    double Lx = 1.0, double Ly = 0.90,
     uint64_t seed = clock()
   )
   : nParticles(N), radius(std::sqrt(density/(N*M_PI))),speed(std::sqrt(density/(N*M_PI))/0.2),drag(0.01),
     rotationalDrag(.01),mass(0.01), momentOfInertia(0.001),
     rotationalDiffusion(0.1),dt(dt),collisionTime(10*dt),
     repelDistance(0.0), alignDistance(0.0*std::sqrt(density/(N*M_PI))), attractDistance(20.0),
-    repelStrength(0.0), alignStrength(0.0), attractStrength(100.0),
+    repelStrength(0.0), alignStrength(0.0), attractStrength(0.0), responseRate(1.0),
     Lx(Lx), Ly(Ly)
   {
 
@@ -120,6 +120,22 @@ public:
     free(floatState);
   }
 
+  enum Parameter {
+    RepelDistance, 
+    RepelStrength, 
+    AlignDistance, 
+    AlignStrength, 
+    AttractDistance, 
+    AttractStrength,
+    Diffusion,
+    Speed,
+    Inertia,
+    ResponseRate
+    };
+
+  void setParameter(Parameter p, double value);
+  double getParameter(Parameter p);
+
 private:
 
   std::vector<double> state;
@@ -170,6 +186,8 @@ private:
 
   double alignDistance;
   double alignStrength;
+
+  double responseRate;
 
   float * floatState;
 

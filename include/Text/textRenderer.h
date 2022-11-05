@@ -22,7 +22,8 @@ public:
     float y,
     float scale,
     glm::vec3 colour,
-    float alpha = 1.0);
+    float alpha = 1.0,
+    bool centre = false);
 
 private:
   GLuint shader;

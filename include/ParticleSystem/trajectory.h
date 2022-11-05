@@ -18,13 +18,39 @@ struct State {
 };
 
 struct Parameters {
-  Parameters(double re, double n, double o, double s)
-  : restitution(re), nParticles(n),order(o),speed(s)
+  Parameters(
+    double re, 
+    double n, 
+    double o, 
+    double s,
+    double rd,
+    double rs,
+    double ad,
+    double as,
+    double attrd,
+    double attrs,
+    double diff,
+    double v0,
+    double inertia,
+    double response
+    )
+  : restitution(re), nParticles(n), order(o), speed(s), rd(rd), rs(rs),
+  ad(ad), as(as), attrd(attrd), attrs(attrs), diff(diff),v0(v0), inertia(inertia),response(response)
   {}
   double restitution;
   double nParticles;
   double order;
   double speed;
+  double rd;
+  double rs;
+  double ad;
+  double as;
+  double attrd;
+  double attrs;
+  double diff;
+  double v0;
+  double inertia;
+  double response;
 };
 
 class Trajectory {

@@ -175,29 +175,37 @@ void ParticleSystem::step(){
   double cc = drag*dt/2.0;
   double D = std::sqrt(2.0*rotationalDiffusion/dt);
 
+  int cnt = 0;
+  double rd = repelDistance*repelDistance;
+  double ra = alignDistance*alignDistance;
+  double rat = attractDistance*attractDistance;
+
   for (int i = 0; i < size(); i++){
 
     double nx = 0.0;
     double ny = 0.0;
     double dtheta = 0.0;
+    double norm = 0.0;
     if (
       (repelDistance > 0 && repelStrength > 0) ||
       (alignDistance > 0 && alignStrength > 0) ||
       (attractDistance > 0 && attractStrength > 0)
       
-      ){
-      for (int j = i+1; j < size(); j++){
+    ){
+      for (int j = 0; j < size(); j++){
+        if (j==i){continue;}
         double rx = state[j*3]-state[i*3];
         double ry = state[j*3+1]-state[i*3+1];
         double d2 = rx*rx+ry*ry;
         if (d2 == 0){continue;}
-        if (repelDistance > 0.0 && d2 < repelDistance){
+        if (repelDistance > 0.0 && d2 < rd){
           // repel
           double d = sqrt(d2);
           nx -= repelStrength*rx/d;
           ny -= repelStrength*ry/d;
+          norm += repelStrength;
         } 
-        else if (alignDistance > 0.0 && d2 < alignDistance){
+        if (alignDistance > 0.0 && d2 >= rd && d2 < ra){
           // align
           double vjx = velocities[j*2];
           double vjy = velocities[j*2+1];
@@ -205,21 +213,22 @@ void ParticleSystem::step(){
           if (v==0){continue;}
           nx += alignStrength*vjx/v;
           ny += alignStrength*vjy/v;
+          norm += alignStrength;
         }
-        else if (attractDistance > 0.0 && d2 < attractDistance){
+        if (attractDistance > 0.0 && d2 >= rd && d2 >= ra && d2 < rat){
           //attract
           double d = sqrt(d2);
           nx += attractStrength*rx/d;
           ny += attractStrength*ry/d;
+          norm += attractStrength;
         }
       }
 
-      dtheta = std::atan2(ny,nx);
-
-      if (dtheta < 0.0){
-        dtheta = std::abs(dtheta)+M_PI;
+      if (norm > 0){
+        nx /= norm;
+        ny /= norm;
+        dtheta = std::cos(state[i*3+2])*ny - std::sin(state[i*3+2])*nx;
       }
-
     }
     
     noise[i*2+1] = noise[i*2];
@@ -243,16 +252,7 @@ void ParticleSystem::step(){
 
     double ax = drag*speed*cos(theta)+forces[i*2];
     double ay = drag*speed*sin(theta)+forces[i*2+1];
-    double atheta;
-
-    if (nx == 0 && ny == 0){
-      atheta = 0.0;
-    }
-    else{
-      double phi = std::fmod(theta,2.0*M_PI);
-      if (phi < 0.0){phi += 2.0*M_PI;}
-      atheta = rotationalDrag*(dtheta-phi);
-    }
+    double atheta = responseRate*dtheta;
 
     state[i*3] = 2.0*bt*x - at*xp + (bt*dtdt/parameters[i*2+1])*ax;
     state[i*3+1] = 2.0*bt*y - at*yp + (bt*dtdt/parameters[i*2+1])*ay;
@@ -306,10 +306,10 @@ void ParticleSystem::step(){
     }
 
     if (flag){
-      state[i*3+2] = ang;
+      //state[i*3+2] = ang;
       state[i*3+1] = newY+uy;
       state[i*3] = newX+ux;
-      lastState[i*3+2] = state[i*3+2];
+      //lastState[i*3+2] = state[i*3+2];
     }
   }
 
@@ -415,5 +415,74 @@ void ParticleSystem::removeParticle(uint64_t i){
       noise.begin()+2*i,
       noise.begin()+2*i+2
     );
+  }
+}
+
+const float maxResponseRate = 2.0;
+const float maxRepelStrength = 1.0;
+const float maxAlignStrength = 1.0;
+const float maxAttractStrength = 1.0;
+const float maxDiffusion = 1.0;
+const float maxSpeed = 20.0;
+const float maxInertia = 1.0;
+
+void ParticleSystem::setParameter(Parameter p, double value){
+  double dc = 100.0*radius;//std::sqrt(Lx*Lx+Ly*Ly);
+  switch (p){
+    case RepelDistance:
+      repelDistance = value*dc;
+      break;
+    case RepelStrength:
+      repelStrength = value*maxRepelStrength;
+      break;
+    case AlignDistance:
+      alignDistance = value*dc;
+      break;
+    case AlignStrength:
+      alignStrength = value*maxAlignStrength;
+      break;
+    case AttractDistance:
+      attractDistance = value*dc;
+      break;
+    case AttractStrength:
+      attractStrength = value*maxAttractStrength;
+      break;
+    case Diffusion:
+      rotationalDiffusion = value*maxDiffusion;
+      break;
+    case Speed:
+      speed = value*radius*maxSpeed;
+      break;
+    case Inertia:
+      momentOfInertia = value*maxInertia+0.001;
+      break;
+    case ResponseRate:
+      responseRate = value*maxResponseRate;
+      break;
+  }
+}
+
+double ParticleSystem::getParameter(Parameter p){
+  switch (p){
+    case RepelDistance:
+      return repelDistance; 
+    case RepelStrength:
+      return repelStrength;
+    case AlignDistance:
+      return alignDistance;
+    case AlignStrength:
+      return alignStrength;
+    case AttractDistance:
+      return attractDistance;
+    case AttractStrength:
+      return attractStrength;
+    case Diffusion:
+      return rotationalDiffusion;
+    case Speed:
+      return speed;
+    case Inertia:
+      return momentOfInertia;
+    case ResponseRate:
+      return responseRate;
   }
 }

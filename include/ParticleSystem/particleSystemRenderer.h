@@ -16,7 +16,7 @@ public:
 
   void setProjection(glm::mat4 p);
   void draw(ParticleSystem & p, uint64_t frameId, float zoomLevel, float resX, float resY);
-
+  void setColours(bool b){colours = b;}
   ~ParticleSystemRenderer(){
     // kill some GL stuff
     glDeleteProgram(particleShader);
@@ -48,6 +48,7 @@ private:
   float * track;
   int trackLength;
   uint64_t trackedParticle;
+  bool colours;
 
   GLuint trackShader, trackVAO, trackVBO;
 

@@ -118,6 +118,11 @@ void ParticleSystemRenderer::draw(
     trackedParticle != NULL_INDEX ? trackedParticle : -1
   );
 
+  glUniform1i(
+    glGetUniformLocation(particleShader,"colourTheta"),
+    colours ? 1 : 0
+  );
+
   glBindBuffer(GL_ARRAY_BUFFER,offsetVBO);
   glBufferSubData(GL_ARRAY_BUFFER,0,sizeof(float)*nParticles*4,&p.floatState[0]);
   glBindBuffer(GL_ARRAY_BUFFER,0);

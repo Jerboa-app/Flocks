@@ -14,7 +14,17 @@ void Trajectory::takeReading(ParticleSystem & p){
             p.coefficientOfRestitution,
             p.size(),
             p.orderParameter(),
-            speed
+            speed,
+            p.getParameter(ParticleSystem::Parameter::RepelDistance),
+            p.getParameter(ParticleSystem::Parameter::RepelStrength),
+            p.getParameter(ParticleSystem::Parameter::AlignDistance),
+            p.getParameter(ParticleSystem::Parameter::AlignStrength),
+            p.getParameter(ParticleSystem::Parameter::AttractDistance),
+            p.getParameter(ParticleSystem::Parameter::AttractStrength),
+            p.getParameter(ParticleSystem::Parameter::Diffusion),
+            p.getParameter(ParticleSystem::Parameter::Speed),
+            p.getParameter(ParticleSystem::Parameter::Inertia),
+            p.getParameter(ParticleSystem::Parameter::ResponseRate)
         )
     );
 
@@ -53,7 +63,17 @@ void Trajectory::threadedSave(std::vector<std::vector<State>> trajectory){
             outParam << parameters[t].restitution << ","
                      << parameters[t].nParticles << ","
                      << parameters[t].order << ","
-                     << parameters[t].speed << "\n";
+                     << parameters[t].speed << ","
+                     << parameters[t].rd << ","
+                     << parameters[t].rs << ","
+                     << parameters[t].ad << ","
+                     << parameters[t].as << ","
+                     << parameters[t].attrd << ","
+                     << parameters[t].attrs << ","
+                     << parameters[t].diff << ","
+                     << parameters[t].v0 << ","
+                     << parameters[t].inertia << ","
+                     << parameters[t].response << "\n";
 
         }
         out.close(); 
