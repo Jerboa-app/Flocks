@@ -25,7 +25,7 @@ public:
     uint64_t N,
     double dt = 1.0/300.0,
     double density = 0.25,
-    double Lx = 1.0, double Ly = 0.95,
+    double Lx = 1.0, double Ly = 0.90,
     uint64_t seed = clock()
   )
   : nParticles(N), radius(std::sqrt(density/(N*M_PI))),speed(std::sqrt(density/(N*M_PI))/0.2),drag(0.01),
@@ -119,6 +119,21 @@ public:
   ~ParticleSystem(){
     free(floatState);
   }
+
+  enum Parameter {
+    RepelDistance, 
+    RepelStrength, 
+    AlignDistance, 
+    AlignStrength, 
+    AttractDistance, 
+    AttractStrength,
+    Diffusion,
+    Speed,
+    Inertia,
+    };
+
+  void setParameter(Parameter p, double value);
+  double getParameter(Parameter p);
 
 private:
 

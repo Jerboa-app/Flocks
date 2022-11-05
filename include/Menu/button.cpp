@@ -40,7 +40,8 @@ void Button::initialiseGL(){
 
 void Button::draw(
   TextRenderer & text,
-  Type & type
+  Type & type,
+  float scale
 ){
 
   glUseProgram(buttonShader);
@@ -83,7 +84,64 @@ void Button::draw(
     label,
     xPosition,
     (yPosition+height*1.5),
-    0.5f,
+    scale,
+    glm::vec3(0.0f,0.0f,0.0f)
+  );
+
+  glError("button draw");
+
+  if (framesSinceClick < feedback){
+    framesSinceClick++;
+  }
+}
+
+void CheckButton::draw(
+  TextRenderer & text,
+  Type & type,
+  float scale
+){
+
+  glUseProgram(buttonShader);
+
+  glUniformMatrix4fv(
+    glGetUniformLocation(buttonShader,"proj"),
+    1,
+    GL_FALSE,
+    &projection[0][0]
+  );
+
+  glUniform4f(
+    glGetUniformLocation(buttonShader,"frameColour"),
+    0.0,0.0,0.0,1.0
+  );
+
+  glUniform4f(
+    glGetUniformLocation(buttonShader,"fillColour"),
+    0.0,0.0,1.0,1.0
+  );
+
+  glUniform1i(
+    glGetUniformLocation(buttonShader,"state"),
+    int(set)
+  );
+
+  glUniform1f(
+    glGetUniformLocation(buttonShader,"alpha"),
+    1.0f - set ? 0.0f : 1.0f
+  );
+
+  glBindVertexArray(buttonVAO);
+
+  glDrawArrays(GL_TRIANGLES,0,6);
+
+  glBindVertexArray(0);
+
+  text.renderText(
+    type,
+    label,
+    xPosition,
+    (yPosition+height*1.5),
+    scale,
     glm::vec3(0.0f,0.0f,0.0f)
   );
 

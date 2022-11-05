@@ -29,6 +29,7 @@
 
 #include <Menu/button.cpp>
 #include <Menu/slider.cpp>
+#include <Menu/sliderGroup.h>
 
 #include <time.h>
 #include <random>
@@ -39,13 +40,12 @@
 const int resX = 1000;
 const int resY = 1000;
 
-const int subSamples = 1;
+const int subSamples = 10;
 const float dt = (1.0 / 60.0) / subSamples;
 
 const int saveFrequency = 1;
 
 const int N = 1024;
-// motion parameters
 
 // for smoothing delta numbers
 uint8_t frameId = 0;
@@ -128,11 +128,37 @@ int main(){
   //  a widget hierachy system, but won't bother for this
   //  app
 
-  Slider particlesSlider(16.0,resY-48.0,128.0,16.0,"Particles");
-  particlesSlider.setPosition(0.5);
-  particlesSlider.setProjection(textProj);
+  SliderGroup sliders(textProj);
 
-  Button newRecording(128.0*2.0+16.0,resY-48.0,16.0,16.0,"Record",30);
+  double x = 128.0*1.0;
+  double w = 96.0;
+
+  sliders.add("particles",8.0,resY-32.0,w,8.0,"Particles");
+  sliders.add("repDist",8.0*2+x,resY-32.0,w,8.0,"Repel Distance");
+  sliders.add("repStr",8.0*2+x*2.0,resY-32.0,w,8.0,"Repel Strength");
+  sliders.add("alignDist",8.0*2+x*3.0,resY-32.0,w,8.0,"Align Dist.");
+  sliders.add("alignStr",8.0*2+x*4.0,resY-32.0,w,8.0,"Align Str.");
+  sliders.add("attrDist",8.0*2+x*5.0,resY-32.0,w,8.0,"Attract Dist.");
+  sliders.add("attrStr",8.0*2+x*6.0,resY-32.0,w,8.0,"Attract Str.");
+  sliders.add("diff",8.0*2,resY-32.0*2,w,8.0,"Diffusion");
+  sliders.add("speed",8.0*2+x*1.0,resY-32.0*2.0,w,8.0,"Speed");
+  sliders.add("inertia",8.0*2+x*2.0,resY-32.0*2.0,w,8.0,"Inertia");
+
+  std::default_random_engine generator;
+  std::uniform_real_distribution<double> U(0.0,1.0);
+
+  sliders.setPosition("particles",0.5);
+  sliders.setPosition("repDist",U(generator));
+  sliders.setPosition("repStr",U(generator));
+  sliders.setPosition("alignDist",U(generator));
+  sliders.setPosition("alignStr",U(generator));
+  sliders.setPosition("attrDist",U(generator));
+  sliders.setPosition("attrStr",U(generator));
+  sliders.setPosition("diff",0.1);
+  sliders.setPosition("speed",0.5);
+  sliders.setPosition("inertia",0.0);
+  
+  Button newRecording(resX-64.0,resY-48.0,8.0,8.0,"Record",30);
   newRecording.setState(false);
   newRecording.setProjection(textProj);
 
@@ -211,8 +237,8 @@ int main(){
         sf::Vector2i pos = sf::Mouse::getPosition(window);
 
         // horrible sliders, should have hierachy + drawable class
-        particlesSlider.clicked(pos.x,resY-pos.y);
-
+        //particlesSlider.clicked(pos.x,resY-pos.y);
+        sliders.clicked(pos.x,resY-pos.y);
         // buttons
         newRecording.clicked(pos.x,resY-pos.y);
 
@@ -227,12 +253,14 @@ int main(){
 
       if (event.type == sf::Event::MouseMoved && sf::Mouse::isButtonPressed(sf::Mouse::Left)){
         sf::Vector2i pos = sf::Mouse::getPosition(window);
-        particlesSlider.drag(pos.x,resY-pos.y);
+        //particlesSlider.drag(pos.x,resY-pos.y);
+        sliders.drag(pos.x,resY-pos.y);
       }
 
       if (event.type == sf::Event::MouseButtonReleased && event.mouseButton.button == sf::Mouse::Left){
         sf::Vector2i pos = sf::Mouse::getPosition(window);
-        particlesSlider.mouseUp();
+        //particlesSlider.mouseUp();
+        sliders.mouseUp();
       }
 
     }
@@ -243,9 +271,8 @@ int main(){
 
     physClock.restart();
 
-    // now for some very inelegant slider logic!
-    int n = std::floor(particlesSlider.getPosition()*float(N));
-    particlesSlider.setLabel("Particles: "+fixedLengthNumber(n,4));
+    int n = std::floor(sliders.getPosition("particles")*float(N));
+    sliders.setLabel("particles","Particles: "+fixedLengthNumber(n,4));
     if (n < particles.size()){
       while (n < particles.size()){
         particles.removeParticle();
@@ -258,6 +285,33 @@ int main(){
         i++;
       }
     }
+
+    float value = sliders.getPosition("repelDist");
+    particles.setParameter(ParticleSystem::Parameter::RepelDistance,value);
+
+    value = sliders.getPosition("repelStr");
+    particles.setParameter(ParticleSystem::Parameter::RepelStrength,value);
+
+    value = sliders.getPosition("alignDist");
+    particles.setParameter(ParticleSystem::Parameter::AlignDistance,value);
+
+    value = sliders.getPosition("alignStr");
+    particles.setParameter(ParticleSystem::Parameter::AlignStrength,value);
+
+    value = sliders.getPosition("attrDist");
+    particles.setParameter(ParticleSystem::Parameter::AttractDistance,value);
+
+    value = sliders.getPosition("attrStr");
+    particles.setParameter(ParticleSystem::Parameter::AttractStrength,value);
+
+    value = sliders.getPosition("diff");
+    particles.setParameter(ParticleSystem::Parameter::Diffusion,value);
+
+    value = sliders.getPosition("speed");
+    particles.setParameter(ParticleSystem::Parameter::Speed,value);
+
+    value = sliders.getPosition("inertia");
+    particles.setParameter(ParticleSystem::Parameter::Inertia,value);
 
     particles.setTimeStep(dt*speed);
 
@@ -297,7 +351,7 @@ int main(){
       textRenderer.renderText(
         OD,
         "Recording to file:\n    "+record.fileName(),
-        resX-400.0,resY-64.0*11,
+        resX-320.0,resY-64.0*1,
         0.25f,
         glm::vec3(0.0f,0.0f,0.0f)
       );
@@ -344,9 +398,10 @@ int main(){
     }
 
     // more inelegant slider drawing
-    particlesSlider.draw(
+    sliders.draw(
       textRenderer,
-      OD
+      OD,
+      0.25f
     );
 
     popups.draw(
@@ -357,7 +412,8 @@ int main(){
 
     newRecording.draw(
       textRenderer,
-      OD
+      OD,
+      0.25f
     );
 
     if(pause){

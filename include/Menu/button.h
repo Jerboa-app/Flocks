@@ -12,9 +12,10 @@ public:
   }
 
   void initialiseGL();
-  void draw(
+  virtual void draw(
     TextRenderer & text,
-    Type & type
+    Type & type,
+    float scale=0.5f
   );
 
   void setProjection(glm::mat4 p){projection=p;}
@@ -29,7 +30,7 @@ public:
 
   bool clicked(float x, float y);
 
-private:
+protected:
 
   std::string label;
 
@@ -50,6 +51,14 @@ private:
 
   GLuint buttonShader, buttonVAO, buttonVBO;
 
+};
+
+class CheckButton : public Button {
+  void draw(
+    TextRenderer & text,
+    Type & type,
+    float scale=0.5f
+  );
 };
 
 #endif

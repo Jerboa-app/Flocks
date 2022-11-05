@@ -66,7 +66,8 @@ void Slider::initialiseGL(){
 
 void Slider::draw(
   TextRenderer & text,
-  Type & type
+  Type & type,
+  float scale
 ){
 
   if (smoothChanging){
@@ -120,7 +121,7 @@ void Slider::draw(
     label,
     xPosition,
     (yPosition+height*1.5),
-    0.5f,
+    scale,
     glm::vec3(0.0f,0.0f,0.0f)
   );
 

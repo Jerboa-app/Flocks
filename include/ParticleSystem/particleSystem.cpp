@@ -175,6 +175,11 @@ void ParticleSystem::step(){
   double cc = drag*dt/2.0;
   double D = std::sqrt(2.0*rotationalDiffusion/dt);
 
+  int cnt = 0;
+  double rd = repelDistance*repelDistance;
+  double ra = alignDistance*alignDistance;
+  double rat = alignDistance*alignDistance;
+
   for (int i = 0; i < size(); i++){
 
     double nx = 0.0;
@@ -191,13 +196,14 @@ void ParticleSystem::step(){
         double ry = state[j*3+1]-state[i*3+1];
         double d2 = rx*rx+ry*ry;
         if (d2 == 0){continue;}
-        if (repelDistance > 0.0 && d2 < repelDistance){
+        if (repelDistance > 0.0 && d2 < rd){
           // repel
           double d = sqrt(d2);
           nx -= repelStrength*rx/d;
           ny -= repelStrength*ry/d;
         } 
-        else if (alignDistance > 0.0 && d2 < alignDistance){
+        else if (alignDistance > 0.0 && d2 < ra){
+          if (i == 0){cnt+=1;}
           // align
           double vjx = velocities[j*2];
           double vjy = velocities[j*2+1];
@@ -206,7 +212,7 @@ void ParticleSystem::step(){
           nx += alignStrength*vjx/v;
           ny += alignStrength*vjy/v;
         }
-        else if (attractDistance > 0.0 && d2 < attractDistance){
+        else if (attractDistance > 0.0 && d2 < rat){
           //attract
           double d = sqrt(d2);
           nx += attractStrength*rx/d;
@@ -219,6 +225,7 @@ void ParticleSystem::step(){
       if (dtheta < 0.0){
         dtheta = std::abs(dtheta)+M_PI;
       }
+      if(i==0){std::cout << cnt << ", " << size()  << "\n";}
 
     }
     
@@ -306,10 +313,10 @@ void ParticleSystem::step(){
     }
 
     if (flag){
-      state[i*3+2] = ang;
+      //state[i*3+2] = ang;
       state[i*3+1] = newY+uy;
       state[i*3] = newX+ux;
-      lastState[i*3+2] = state[i*3+2];
+      //lastState[i*3+2] = state[i*3+2];
     }
   }
 
@@ -415,5 +422,68 @@ void ParticleSystem::removeParticle(uint64_t i){
       noise.begin()+2*i,
       noise.begin()+2*i+2
     );
+  }
+}
+
+const float maxRepelStrength = 10.0;
+const float maxAlignStrength = 10.0;
+const float maxAttractStrength = 10.0;
+const float maxDiffusion = 1.0;
+const float maxSpeed = 20.0;
+const float maxInertia = 1.0;
+
+void ParticleSystem::setParameter(Parameter p, double value){
+  double dc =  std::sqrt(Lx*Lx+Ly*Ly);
+  switch (p){
+    case RepelDistance:
+      repelDistance = value*dc;
+      break;
+    case RepelStrength:
+      repelStrength = value*maxRepelStrength;
+      break;
+    case AlignDistance:
+      alignDistance = value*dc;
+      break;
+    case AlignStrength:
+      alignStrength = value*maxAlignStrength;
+      break;
+    case AttractDistance:
+      attractDistance = value*dc;
+      break;
+    case AttractStrength:
+      attractStrength = value*maxAttractStrength;
+      break;
+    case Diffusion:
+      rotationalDiffusion = value*maxDiffusion;
+      break;
+    case Speed:
+      speed = value*radius*maxSpeed;
+      break;
+    case Inertia:
+      momentOfInertia = value*maxInertia+0.001;
+      break;
+  }
+}
+
+double ParticleSystem::getParameter(Parameter p){
+  switch (p){
+    case RepelDistance:
+      return repelDistance; 
+    case RepelStrength:
+      return repelStrength;
+    case AlignDistance:
+      return alignDistance;
+    case AlignStrength:
+      return alignStrength;
+    case AttractDistance:
+      return attractDistance;
+    case AttractStrength:
+      return attractStrength;
+    case Diffusion:
+      return rotationalDiffusion;
+    case Speed:
+      return speed;
+    case Inertia:
+      return momentOfInertia;
   }
 }

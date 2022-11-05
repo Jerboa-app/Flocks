@@ -7,6 +7,8 @@
 class Slider {
 public:
 
+  Slider(){}
+
   Slider(float x, float y, float w, float h, std::string l)
   : xPosition(x), yPosition(y), width(w), height(h),
   position(0.0), label(l), dragging(false), smoothChange(false), period(60), rate(0.0), smoothChanging(false)
@@ -17,7 +19,8 @@ public:
   void initialiseGL();
   void draw(
     TextRenderer & text,
-    Type & type
+    Type & type,
+    float scale = 0.5f
   );
 
   void setProjection(glm::mat4 p){projection=p;}
