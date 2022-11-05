@@ -178,20 +178,22 @@ void ParticleSystem::step(){
   int cnt = 0;
   double rd = repelDistance*repelDistance;
   double ra = alignDistance*alignDistance;
-  double rat = alignDistance*alignDistance;
+  double rat = attractDistance*attractDistance;
 
   for (int i = 0; i < size(); i++){
 
     double nx = 0.0;
     double ny = 0.0;
     double dtheta = 0.0;
+    double norm = 0.0;
     if (
       (repelDistance > 0 && repelStrength > 0) ||
       (alignDistance > 0 && alignStrength > 0) ||
       (attractDistance > 0 && attractStrength > 0)
       
-      ){
-      for (int j = i+1; j < size(); j++){
+    ){
+      for (int j = 0; j < size(); j++){
+        if (j==i){continue;}
         double rx = state[j*3]-state[i*3];
         double ry = state[j*3+1]-state[i*3+1];
         double d2 = rx*rx+ry*ry;
@@ -201,9 +203,9 @@ void ParticleSystem::step(){
           double d = sqrt(d2);
           nx -= repelStrength*rx/d;
           ny -= repelStrength*ry/d;
+          norm += repelStrength;
         } 
-        else if (alignDistance > 0.0 && d2 < ra){
-          if (i == 0){cnt+=1;}
+        if (alignDistance > 0.0 && d2 >= rd && d2 < ra){
           // align
           double vjx = velocities[j*2];
           double vjy = velocities[j*2+1];
@@ -211,22 +213,22 @@ void ParticleSystem::step(){
           if (v==0){continue;}
           nx += alignStrength*vjx/v;
           ny += alignStrength*vjy/v;
+          norm += alignStrength;
         }
-        else if (attractDistance > 0.0 && d2 < rat){
+        if (attractDistance > 0.0 && d2 >= rd && d2 >= ra && d2 < rat){
           //attract
           double d = sqrt(d2);
           nx += attractStrength*rx/d;
           ny += attractStrength*ry/d;
+          norm += attractStrength;
         }
       }
 
-      dtheta = std::atan2(ny,nx);
-
-      if (dtheta < 0.0){
-        dtheta = std::abs(dtheta)+M_PI;
+      if (norm > 0){
+        nx /= norm;
+        ny /= norm;
+        dtheta = std::cos(state[i*3+2])*ny - std::sin(state[i*3+2])*nx;
       }
-      if(i==0){std::cout << cnt << ", " << size()  << "\n";}
-
     }
     
     noise[i*2+1] = noise[i*2];
@@ -250,16 +252,7 @@ void ParticleSystem::step(){
 
     double ax = drag*speed*cos(theta)+forces[i*2];
     double ay = drag*speed*sin(theta)+forces[i*2+1];
-    double atheta;
-
-    if (nx == 0 && ny == 0){
-      atheta = 0.0;
-    }
-    else{
-      double phi = std::fmod(theta,2.0*M_PI);
-      if (phi < 0.0){phi += 2.0*M_PI;}
-      atheta = rotationalDrag*(dtheta-phi);
-    }
+    double atheta = responseRate*dtheta;
 
     state[i*3] = 2.0*bt*x - at*xp + (bt*dtdt/parameters[i*2+1])*ax;
     state[i*3+1] = 2.0*bt*y - at*yp + (bt*dtdt/parameters[i*2+1])*ay;
@@ -425,15 +418,16 @@ void ParticleSystem::removeParticle(uint64_t i){
   }
 }
 
-const float maxRepelStrength = 10.0;
-const float maxAlignStrength = 10.0;
-const float maxAttractStrength = 10.0;
+const float maxResponseRate = 2.0;
+const float maxRepelStrength = 1.0;
+const float maxAlignStrength = 1.0;
+const float maxAttractStrength = 1.0;
 const float maxDiffusion = 1.0;
 const float maxSpeed = 20.0;
 const float maxInertia = 1.0;
 
 void ParticleSystem::setParameter(Parameter p, double value){
-  double dc =  std::sqrt(Lx*Lx+Ly*Ly);
+  double dc = 100.0*radius;//std::sqrt(Lx*Lx+Ly*Ly);
   switch (p){
     case RepelDistance:
       repelDistance = value*dc;
@@ -462,6 +456,9 @@ void ParticleSystem::setParameter(Parameter p, double value){
     case Inertia:
       momentOfInertia = value*maxInertia+0.001;
       break;
+    case ResponseRate:
+      responseRate = value*maxResponseRate;
+      break;
   }
 }
 
@@ -485,5 +482,7 @@ double ParticleSystem::getParameter(Parameter p){
       return speed;
     case Inertia:
       return momentOfInertia;
+    case ResponseRate:
+      return responseRate;
   }
 }

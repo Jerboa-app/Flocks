@@ -28,7 +28,7 @@ public:
 
   void setLabel(std::string s){label=s;}
 
-  bool clicked(float x, float y);
+  virtual bool clicked(float x, float y);
 
 protected:
 
@@ -54,11 +54,26 @@ protected:
 };
 
 class CheckButton : public Button {
+  public:
+  CheckButton(float x, float y, float w, float h, std::string l, uint8_t f)
+  : Button(x,y,w,h,l,f)
+  {}
+
   void draw(
     TextRenderer & text,
     Type & type,
     float scale=0.5f
   );
+
+
+  bool clicked(float x, float y){
+    // assumes axis aligned
+    if (xPosition <= x && x <= xPosition+width && yPosition <= y && y <= yPosition+height){
+      set = !set;
+      return true;
+    }
+    return false;
+  }
 };
 
 #endif

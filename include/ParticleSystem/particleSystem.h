@@ -32,7 +32,7 @@ public:
     rotationalDrag(.01),mass(0.01), momentOfInertia(0.001),
     rotationalDiffusion(0.1),dt(dt),collisionTime(10*dt),
     repelDistance(0.0), alignDistance(0.0*std::sqrt(density/(N*M_PI))), attractDistance(20.0),
-    repelStrength(0.0), alignStrength(0.0), attractStrength(100.0),
+    repelStrength(0.0), alignStrength(0.0), attractStrength(0.0), responseRate(1.0),
     Lx(Lx), Ly(Ly)
   {
 
@@ -130,6 +130,7 @@ public:
     Diffusion,
     Speed,
     Inertia,
+    ResponseRate
     };
 
   void setParameter(Parameter p, double value);
@@ -185,6 +186,8 @@ private:
 
   double alignDistance;
   double alignStrength;
+
+  double responseRate;
 
   float * floatState;
 

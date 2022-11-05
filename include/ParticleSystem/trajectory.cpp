@@ -23,7 +23,8 @@ void Trajectory::takeReading(ParticleSystem & p){
             p.getParameter(ParticleSystem::Parameter::AttractStrength),
             p.getParameter(ParticleSystem::Parameter::Diffusion),
             p.getParameter(ParticleSystem::Parameter::Speed),
-            p.getParameter(ParticleSystem::Parameter::Inertia)
+            p.getParameter(ParticleSystem::Parameter::Inertia),
+            p.getParameter(ParticleSystem::Parameter::ResponseRate)
         )
     );
 
@@ -71,7 +72,8 @@ void Trajectory::threadedSave(std::vector<std::vector<State>> trajectory){
                      << parameters[t].attrs << ","
                      << parameters[t].diff << ","
                      << parameters[t].v0 << ","
-                     << parameters[t].inertia << "\n";
+                     << parameters[t].inertia << ","
+                     << parameters[t].response << "\n";
 
         }
         out.close(); 

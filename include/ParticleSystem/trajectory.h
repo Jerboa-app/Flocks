@@ -31,10 +31,11 @@ struct Parameters {
     double attrs,
     double diff,
     double v0,
-    double inertia
+    double inertia,
+    double response
     )
   : restitution(re), nParticles(n), order(o), speed(s), rd(rd), rs(rs),
-  ad(ad), as(as), attrd(attrd), attrs(attrs), diff(diff),v0(v0), inertia(inertia)
+  ad(ad), as(as), attrd(attrd), attrs(attrs), diff(diff),v0(v0), inertia(inertia),response(response)
   {}
   double restitution;
   double nParticles;
@@ -49,6 +50,7 @@ struct Parameters {
   double diff;
   double v0;
   double inertia;
+  double response;
 };
 
 class Trajectory {

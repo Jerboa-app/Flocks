@@ -40,7 +40,7 @@
 const int resX = 1000;
 const int resY = 1000;
 
-const int subSamples = 10;
+const int subSamples = 1;
 const float dt = (1.0 / 60.0) / subSamples;
 
 const int saveFrequency = 1;
@@ -95,7 +95,7 @@ int main(){
   // the core simulation
   ParticleSystem particles(N,dt);
   // handles rendering - separation of concerns
-  ParticleSystemRenderer pRender(N);
+  ParticleSystemRenderer pRender(N,60*5.0);
 
   sf::Clock clock;
   sf::Clock physClock, renderClock;
@@ -143,11 +143,12 @@ int main(){
   sliders.add("diff",8.0*2,resY-32.0*2,w,8.0,"Diffusion");
   sliders.add("speed",8.0*2+x*1.0,resY-32.0*2.0,w,8.0,"Speed");
   sliders.add("inertia",8.0*2+x*2.0,resY-32.0*2.0,w,8.0,"Inertia");
+  sliders.add("resp",8.0*2+x*3.0,resY-32.0*2.0,w,8.0,"Response Rate");
 
   std::default_random_engine generator;
   std::uniform_real_distribution<double> U(0.0,1.0);
 
-  sliders.setPosition("particles",0.5);
+  sliders.setPosition("particles",0.25);
   sliders.setPosition("repDist",U(generator));
   sliders.setPosition("repStr",U(generator));
   sliders.setPosition("alignDist",U(generator));
@@ -157,10 +158,15 @@ int main(){
   sliders.setPosition("diff",0.1);
   sliders.setPosition("speed",0.5);
   sliders.setPosition("inertia",0.0);
+  sliders.setPosition("resp",0.5);
   
   Button newRecording(resX-64.0,resY-48.0,8.0,8.0,"Record",30);
   newRecording.setState(false);
   newRecording.setProjection(textProj);
+
+  CheckButton colours(8.0*2+x*4.0,resY-32.0*2.0,8.0,8.0,"Colours",30);
+  colours.setState(true);
+  colours.setProjection(textProj);
 
   double oldMouseX = 0.0;
   double oldMouseY = 0.0;
@@ -170,7 +176,8 @@ int main(){
 
   bool moving = false;
 
-  bool pause = false;
+  bool pause = true;
+  bool startUp = true;
 
   bool isRecording = false;
   Trajectory record;
@@ -196,6 +203,9 @@ int main(){
 
       if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space){
         pause = !pause;
+        if (startUp){
+          startUp = false;
+        }
       }
 
 
@@ -241,6 +251,7 @@ int main(){
         sliders.clicked(pos.x,resY-pos.y);
         // buttons
         newRecording.clicked(pos.x,resY-pos.y);
+        colours.clicked(pos.x,resY-pos.y);
 
         // multiply by inverse of current projection
         glm::vec4 worldPos = camera.screenToWorld(pos.x,pos.y);
@@ -286,10 +297,10 @@ int main(){
       }
     }
 
-    float value = sliders.getPosition("repelDist");
+    float value = sliders.getPosition("repDist");
     particles.setParameter(ParticleSystem::Parameter::RepelDistance,value);
 
-    value = sliders.getPosition("repelStr");
+    value = sliders.getPosition("repStr");
     particles.setParameter(ParticleSystem::Parameter::RepelStrength,value);
 
     value = sliders.getPosition("alignDist");
@@ -313,6 +324,9 @@ int main(){
     value = sliders.getPosition("inertia");
     particles.setParameter(ParticleSystem::Parameter::Inertia,value);
 
+    value = sliders.getPosition("resp");
+    particles.setParameter(ParticleSystem::Parameter::ResponseRate,value);
+
     particles.setTimeStep(dt*speed);
 
     if (!pause){
@@ -329,6 +343,7 @@ int main(){
     glm::mat4 proj = camera.getVP();
 
     pRender.setProjection(proj);
+    pRender.setColours(colours.getState());
     pRender.draw(
       particles,
       frameId,
@@ -376,7 +391,7 @@ int main(){
       float cameraX = camera.getPosition().x;
       float cameraY = camera.getPosition().y;
 
-      debugText << "Particles: " << N <<
+      debugText << "Particles: " << n <<
         "\n" <<
         "Delta: " << fixedLengthNumber(delta,6) <<
         " (FPS: " << fixedLengthNumber(1.0/delta,4) << ")" <<
@@ -391,7 +406,7 @@ int main(){
       textRenderer.renderText(
         OD,
         debugText.str(),
-        64.0f,resY-64.0f,
+        64.0f,resY-128.0f,
         0.5f,
         glm::vec3(0.0f,0.0f,0.0f)
       );
@@ -416,15 +431,34 @@ int main(){
       0.25f
     );
 
-    if(pause){
+    colours.draw(
+      textRenderer,
+      OD,
+      0.25f
+    );
+
+    if(pause && !startUp){
       textRenderer.renderText(
         OD,
         "Space to resume",
-        resX/3.,
+        resX/2.,
         resY/2.,
         0.5,
         glm::vec3(0.,0.,0.),
-        1.0
+        1.0,
+        true
+      );
+    }
+    else if(pause && startUp){
+      textRenderer.renderText(
+        OD,
+        "This app can produce flashing colours.\nClick the \"Colours\" button to suppress them.\nPress space to begin.",
+        resX/2.0,
+        resY-128.0,
+        0.5,
+        glm::vec3(0.,0.,0.),
+        1.0,
+        true
       );
     }
 
