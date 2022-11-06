@@ -461,7 +461,6 @@ int main(){
       );
     }
     if (predatorActive){
-      std::cout << int(eatenCounter) << "\n";
       textRenderer.renderText(
         OD,
         "Eaten: "+std::to_string(int(eatenCounter)),

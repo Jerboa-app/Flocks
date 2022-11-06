@@ -242,9 +242,6 @@ size_t ParticleSystem::step(){
         double vp = (predVx*predVx+predVy*predVy);
         double d = std::sqrt(d2);
         double mag = (1.0+vp)/(d2/(radius));
-        if (i == 0){
-          std::cout << nx << ", " << ny << "\n";
-        }
         nx = (nx + mag*px/d)/(1.0+mag);
         ny = (ny + mag*py/d)/(1.0+mag);
         speedMultiplier = 1.0+radius/d2;
