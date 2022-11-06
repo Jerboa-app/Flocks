@@ -1,6 +1,6 @@
 # Flocks
 
-A demo of a few flocking models
+A demo of a flocking model (Couzin like), **includes a playable predator!**
 
 Uses C++ with SFML and OpenGL
 
