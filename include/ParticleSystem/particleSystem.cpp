@@ -1,5 +1,8 @@
 #include <ParticleSystem/particleSystem.h>
+#include <ParticleSystem/predator/predator.h>
 #include <time.h>
+
+const double MAX_PARTICLE_SPEED = MAX_PREDATOR_SPEED*10.0;
 
 void ParticleSystem::resetLists(){
   for (int i = 0; i < Nc*Nc; i++){
@@ -143,7 +146,7 @@ void ParticleSystem::newTimeStepStates(double oldDt, double newDt){
   }
 }
 
-void ParticleSystem::step(){
+size_t ParticleSystem::step(){
   clock_t tic = clock();
   resetLists();
   populateLists();
@@ -179,6 +182,8 @@ void ParticleSystem::step(){
   double rd = repelDistance*repelDistance;
   double ra = alignDistance*alignDistance;
   double rat = attractDistance*attractDistance;
+
+  std::vector<uint64_t> toRemove;
 
   for (int i = 0; i < size(); i++){
 
@@ -223,13 +228,35 @@ void ParticleSystem::step(){
           norm += attractStrength;
         }
       }
-
-      if (norm > 0){
-        nx /= norm;
-        ny /= norm;
-        dtheta = std::cos(state[i*3+2])*ny - std::sin(state[i*3+2])*nx;
-      }
     }
+
+    double speedMultiplier = 1.0;
+
+    if (norm > 0){
+      nx /= norm;
+      ny /= norm;
+      if (predatorActive){
+        double px = state[i*3]-predX;
+        double py = state[i*3+1]-predY;
+        double d2 = px*px+py*py;
+        double vp = (predVx*predVx+predVy*predVy);
+        double d = std::sqrt(d2);
+        double mag = (1.0+vp)/(d2/(radius));
+        if (i == 0){
+          std::cout << nx << ", " << ny << "\n";
+        }
+        nx = (nx + mag*px/d)/(1.0+mag);
+        ny = (ny + mag*py/d)/(1.0+mag);
+        speedMultiplier = 1.0+radius/d2;
+
+        if (d < radius){
+          // eaten!
+          toRemove.push_back(i);
+        }
+      }
+      dtheta = std::cos(state[i*3+2])*ny - std::sin(state[i*3+2])*nx;
+    }
+
     
     noise[i*2+1] = noise[i*2];
     noise[i*2] = normal(generator);
@@ -250,8 +277,10 @@ void ParticleSystem::step(){
     double yp = lastState[i*3+1];
     double thetap = lastState[i*3+2];
 
-    double ax = drag*speed*cos(theta)+forces[i*2];
-    double ay = drag*speed*sin(theta)+forces[i*2+1];
+    double s = std::min(MAX_PARTICLE_SPEED*radius,speedMultiplier*speed);
+
+    double ax = drag*s*cos(theta)+forces[i*2];
+    double ay = drag*s*sin(theta)+forces[i*2+1];
     double atheta = responseRate*dtheta;
 
     state[i*3] = 2.0*bt*x - at*xp + (bt*dtdt/parameters[i*2+1])*ax;
@@ -320,8 +349,14 @@ void ParticleSystem::step(){
     for (int k = 0; k < 3; k++){floatState[i*4+k] = float(state[i*3+k]);}
   }
 
+  for (int i = 0; i < toRemove.size(); i++){
+    removeParticle(i);
+  }
+
   double updates = (clock()-tic)/double(CLOCKS_PER_SEC);
   tic = clock();
+
+  return toRemove.size();
 }
 
 void ParticleSystem::addParticle(){
