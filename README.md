@@ -8,6 +8,15 @@ Uses C++ with SFML and OpenGL
 
 | Function     | Keys |
 | ----------- | ----------- |
+| track a particle | click it |
+| start/pause | SPACE |
+| spawn predator | P |
+| speed up predator | W |
+| slow down predator | S | 
+| turn (anti-clockwise) predator | A |
+| turn (clockwise) ppredator | D |
+| slow down time | L |
+| speed up time | H |
 | toggle debug menu      | F1      |
 
 ### Building
