@@ -99,16 +99,52 @@ const char * particleVertexShader = "#version 330 core\n"
   "}";
 const char * particleFragmentShader = "#version 330 core\n"
   "in vec4 o_colour; out vec4 colour; in float theta;\n"
+  "uniform float zoom;\n"
   "void main(){\n"
   " vec2 c = 2.0*gl_PointCoord-1.0;\n"
   " float d = length(c);\n"
-  // bit of simple AA
-  " float alpha = 1.0-smoothstep(0.95,1.05,d);\n"
+  // bit of simple AA that adapts to zoom
+  " float dz = (1.0-smoothstep(1.0,4.0,zoom))*0.1;\n"
+  " float alpha = 1.0-smoothstep(0.99-dz,1.01+dz,d);\n"
   " colour = vec4(o_colour.rgb,alpha);\n"
   " float de = distance(c,0.66*vec2(cos(theta),-sin(theta)));\n"
   " if (de < 0.33){"
-  "    colour = vec4(1.0,1.0,1.0,1.0-smoothstep(0.9,1.1,de));\n"
+  // mix for the eye
+  "    colour = vec4(1.0,1.0,1.0,1.0);\n"
   " }"
+  " if (de > 0.3 && de < 0.375){colour = mix(vec4(o_colour.rgb,alpha),vec4(1.0,1.0,1.0,alpha),1.0-smoothstep(0.3,0.375,de));}\n"
+  " if (colour.a == 0.0){discard;}"
+  "}";
+
+const char * predatorVertexShader = "#version 330 core\n"
+  "#define PI 3.14159265359\n"
+  "precision highp float;\n"
+  "uniform int colourTheta;\n"
+  "layout(location = 0) in vec4 a_position;\n"
+  "uniform mat4 proj; uniform float scale; uniform float zoom;\n"
+  "out vec4 o_colour; out float theta;\n"
+  "void main(){\n"
+  " gl_Position = proj*vec4(a_position.xy,0.0,1.0);\n"
+  " gl_PointSize = a_position.w*scale*zoom;\n"
+  "o_colour = vec4(1.0,0.5,0.5,1.0);"
+  "theta = a_position.z;\n"
+  "}";
+const char * predatorFragmentShader = "#version 330 core\n"
+  "in vec4 o_colour; out vec4 colour; in float theta;\n"
+  "uniform float zoom;\n"
+  "void main(){\n"
+  " vec2 c = 2.0*gl_PointCoord-1.0;\n"
+  " float d = length(c);\n"
+  // bit of simple AA that adapts to zoom
+  " float dz = (1.0-smoothstep(1.0,4.0,zoom))*0.1;\n"
+  " float alpha = 1.0-smoothstep(0.99-dz,1.01+dz,d);\n"
+  " colour = vec4(o_colour.rgb,alpha);\n"
+  " float de = distance(c,0.66*vec2(cos(theta),-sin(theta)));\n"
+  " if (de < 0.33){"
+  // mix for the eye
+  "    colour = vec4(1.0,1.0,1.0,1.0);\n"
+  " }"
+  " if (de > 0.3 && de < 0.375){colour = mix(vec4(o_colour.rgb,alpha),vec4(1.0,1.0,1.0,alpha),1.0-smoothstep(0.3,0.375,de));}\n"
   " if (colour.a == 0.0){discard;}"
   "}";
 

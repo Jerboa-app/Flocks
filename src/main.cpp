@@ -24,6 +24,7 @@
 #include <ParticleSystem/particleSystem.cpp>
 #include <ParticleSystem/particleSystemRenderer.cpp>
 #include <ParticleSystem/trajectory.cpp>
+#include <ParticleSystem/predator/predator.cpp>
 #include <Text/textRenderer.cpp>
 #include <Text/popup.cpp>
 
@@ -52,6 +53,8 @@ uint8_t frameId = 0;
 double deltas[60];
 double physDeltas[60];
 double renderDeltas[60];
+
+uint64_t eatenCounter = 0;
 
 float speed = 1.0;
 
@@ -96,6 +99,9 @@ int main(){
   ParticleSystem particles(N,dt);
   // handles rendering - separation of concerns
   ParticleSystemRenderer pRender(N,60*5.0);
+  // player predator
+  Predator predator(0.5,0.5,0.0,particles.getRadius());
+  bool predatorActive = false;
 
   sf::Clock clock;
   sf::Clock physClock, renderClock;
@@ -192,6 +198,13 @@ int main(){
         window.close();
       }
 
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::P){
+        predatorActive = !predatorActive;
+        if (predatorActive){
+          predator.setState(0.5,0.5,0.0);
+        }
+      }
+
       if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape){
         if ( isRecording ){record.save();}
         window.close();
@@ -209,7 +222,7 @@ int main(){
       }
 
 
-      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::W){
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::H){
         speed *= 2.0;
         if (speed > 1){
           speed = 1;
@@ -217,12 +230,25 @@ int main(){
         speedPopUp(popups);
       }
 
-      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::S){
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::L){
         speed /= 2.0;
         if (speed < 0.01){
           speed = 0.01;
         }
         speedPopUp(popups);
+      }
+
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::W)){
+        predator.speedIncrement(true);
+      }
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::A)){
+        predator.turn(true);
+      }
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::S)){
+        predator.speedIncrement(false);
+      }
+      if (sf::Keyboard::isKeyPressed(sf::Keyboard::D)){
+        predator.turn(false);
       }
 
 
@@ -331,8 +357,21 @@ int main(){
 
     if (!pause){
       for (int s = 0; s < subSamples; s++){
-        particles.step();
+
+        particles.setPredatorActive(predatorActive);
+        if (predatorActive){
+            std::vector<double> s = predator.getState();
+            particles.predatorState(s[0],s[1],s[2],s[3]);
+        }
+        size_t eaten = particles.step();
+        eatenCounter += eaten;
+
         pRender.updatedTrack(particles);
+
+        if (predatorActive){
+          predator.step(speed*dt/subSamples);
+        }
+
       }
     }
 
@@ -351,6 +390,16 @@ int main(){
       resX,
       resY
     );
+
+    if (predatorActive){
+      predator.setProjection(proj);
+      predator.draw(
+        frameId,
+        camera.getZoomLevel(),
+        resX,
+        resY
+      );
+    }
 
     if (newRecording.getState()){
       record.newFile();
@@ -408,6 +457,16 @@ int main(){
         debugText.str(),
         64.0f,resY-128.0f,
         0.5f,
+        glm::vec3(0.0f,0.0f,0.0f)
+      );
+    }
+    if (predatorActive){
+      std::cout << int(eatenCounter) << "\n";
+      textRenderer.renderText(
+        OD,
+        "Eaten: "+std::to_string(int(eatenCounter)),
+        8.0*2+x*5.0,resY-32.0*2.0,
+        0.25f,
         glm::vec3(0.0f,0.0f,0.0f)
       );
     }
