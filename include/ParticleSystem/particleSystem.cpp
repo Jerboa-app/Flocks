@@ -3,6 +3,7 @@
 #include <time.h>
 
 const double MAX_PARTICLE_SPEED = MAX_PREDATOR_SPEED*10.0;
+const double MAX_INTERACTION_RANGE = 40.0;
 
 void ParticleSystem::resetLists(){
   for (int i = 0; i < Nc*Nc; i++){
@@ -146,6 +147,58 @@ void ParticleSystem::newTimeStepStates(double oldDt, double newDt){
   }
 }
 
+void repelInteraction(ParticleSystem * p, uint64_t i, uint64_t j){
+  double rx = p->state[j*3]-p->state[i*3];
+  double ry = p->state[j*3+1]-p->state[i*3+1];
+  double d2 = rx*rx+ry*ry;
+  double rd = p->repelDistance*p->repelDistance;
+  if (d2 == 0){return;}
+  if (p->repelDistance > 0.0 && d2 < rd){
+    // repel
+    double d = sqrt(d2);
+    p->interactions[i*2] -= p->repelStrength*rx/d;
+    p->interactions[i*2+1] -= p->repelStrength*ry/d;
+
+    p->interactions[j*2] += p->repelStrength*rx/d;
+    p->interactions[j*2+1] += p->repelStrength*ry/d;
+    p->interactionsNorm[i] += p->repelStrength;
+  } 
+}
+
+void alignInteraction(ParticleSystem * p, uint64_t i, uint64_t j){
+  double rx = p->state[j*3]-p->state[i*3];
+  double ry = p->state[j*3+1]-p->state[i*3+1];
+  double d2 = rx*rx+ry*ry;
+  double rd = p->repelDistance*p->repelDistance;
+  double ra = p->alignDistance*p->alignDistance;
+  if (p->alignDistance > 0.0 && d2 >= rd && d2 < ra){
+    // align
+    double vjx = p->velocities[j*2];
+    double vjy = p->velocities[j*2+1];
+    double v = std::sqrt(vjx*vjx+vjy*vjy);
+    if (v==0){return;}
+    p->interactions[i*2] += p->alignStrength*vjx/v;
+    p->interactions[i*2+1] += p->alignStrength*vjy/v;
+    p->interactionsNorm[i] += p->alignStrength;
+  }
+}
+
+void attractInteraction(ParticleSystem * p, uint64_t i, uint64_t j){
+  double rx = p->state[j*3]-p->state[i*3];
+  double ry = p->state[j*3+1]-p->state[i*3+1];
+  double d2 = rx*rx+ry*ry;
+  double rd = p->repelDistance*p->repelDistance;
+  double ra = p->alignDistance*p->alignDistance;
+  double rat = p->attractDistance*p->attractDistance;
+  if (p->attractDistance > 0.0 && d2 >= rd && d2 >= ra && d2 < rat){
+    //attract
+    double d = sqrt(d2);
+    p->interactions[i*2] += p->attractStrength*rx/d;
+    p->interactions[i*2+1] += p->attractStrength*ry/d;
+    p->interactionsNorm[i] += p->attractStrength;
+  }
+}
+
 size_t ParticleSystem::step(){
   clock_t tic = clock();
   resetLists();
@@ -183,55 +236,79 @@ size_t ParticleSystem::step(){
   double ra = alignDistance*alignDistance;
   double rat = attractDistance*attractDistance;
 
+  for (int i = 0; i < size(); i++){
+    interactions[i*2] = 0.0;
+    interactions[i*2+1] = 0.0;
+
+    interactionsNorm[i] = 0.0;
+  }
+
+  repulsionCellList.resetLists();
+  for (int i = 0; i < size(); i++){
+      repulsionCellList.insert(i,state[i*3],state[i*3+1]);
+  }
+  repulsionCellList.handleInteractions(this,&repelInteraction);
+
+  alignCellList.resetLists();
+  for (int i = 0; i < size(); i++){
+      alignCellList.insert(i,state[i*3],state[i*3+1]);
+  }
+  alignCellList.handleInteractions(this,&alignInteraction);
+
+  attractCellList.resetLists();
+  for (int i = 0; i < size(); i++){
+      attractCellList.insert(i,state[i*3],state[i*3+1]);
+  }
+  attractCellList.handleInteractions(this,&attractInteraction);
+
   std::vector<uint64_t> toRemove;
 
   for (int i = 0; i < size(); i++){
 
-    double nx = 0.0;
-    double ny = 0.0;
     double dtheta = 0.0;
-    double norm = 0.0;
-    if (
-      (repelDistance > 0 && repelStrength > 0) ||
-      (alignDistance > 0 && alignStrength > 0) ||
-      (attractDistance > 0 && attractStrength > 0)
+  //   if (
+  //     (repelDistance > 0 && repelStrength > 0) ||
+  //     (alignDistance > 0 && alignStrength > 0) ||
+  //     (attractDistance > 0 && attractStrength > 0)
       
-    ){
-      for (int j = 0; j < size(); j++){
-        if (j==i){continue;}
-        double rx = state[j*3]-state[i*3];
-        double ry = state[j*3+1]-state[i*3+1];
-        double d2 = rx*rx+ry*ry;
-        if (d2 == 0){continue;}
-        if (repelDistance > 0.0 && d2 < rd){
-          // repel
-          double d = sqrt(d2);
-          nx -= repelStrength*rx/d;
-          ny -= repelStrength*ry/d;
-          norm += repelStrength;
-        } 
-        if (alignDistance > 0.0 && d2 >= rd && d2 < ra){
-          // align
-          double vjx = velocities[j*2];
-          double vjy = velocities[j*2+1];
-          double v = std::sqrt(vjx*vjx+vjy*vjy);
-          if (v==0){continue;}
-          nx += alignStrength*vjx/v;
-          ny += alignStrength*vjy/v;
-          norm += alignStrength;
-        }
-        if (attractDistance > 0.0 && d2 >= rd && d2 >= ra && d2 < rat){
-          //attract
-          double d = sqrt(d2);
-          nx += attractStrength*rx/d;
-          ny += attractStrength*ry/d;
-          norm += attractStrength;
-        }
-      }
-    }
+  //   ){
+  //     for (int j = 0; j < size(); j++){
+  //       if (j==i){continue;}
+  //       double rx = state[j*3]-state[i*3];
+  //       double ry = state[j*3+1]-state[i*3+1];
+  //       double d2 = rx*rx+ry*ry;
+  //       if (d2 == 0){continue;}
+  //       if (repelDistance > 0.0 && d2 < rd){
+  //         // repel
+  //         double d = sqrt(d2);
+  //         nx -= repelStrength*rx/d;
+  //         ny -= repelStrength*ry/d;
+  //         norm += repelStrength;
+  //       } 
+  //       if (alignDistance > 0.0 && d2 >= rd && d2 < ra){
+  //         // align
+  //         double vjx = velocities[j*2];
+  //         double vjy = velocities[j*2+1];
+  //         double v = std::sqrt(vjx*vjx+vjy*vjy);
+  //         if (v==0){continue;}
+  //         nx += alignStrength*vjx/v;
+  //         ny += alignStrength*vjy/v;
+  //         norm += alignStrength;
+  //       }
+  //       if (attractDistance > 0.0 && d2 >= rd && d2 >= ra && d2 < rat){
+  //         //attract
+  //         double d = sqrt(d2);
+  //         nx += attractStrength*rx/d;
+  //         ny += attractStrength*ry/d;
+  //         norm += attractStrength;
+  //       }
+  //     }
+  //   }
 
     double speedMultiplier = 1.0;
-
+    double norm = interactionsNorm[i];
+    double nx = interactions[i*2];
+    double ny = interactions[i*2+1];
     if (norm > 0){
       nx /= norm;
       ny /= norm;
@@ -379,7 +456,8 @@ void ParticleSystem::addParticle(
   double y,
   double theta,
   double r,
-  double m
+  double m,
+  bool initialiseCellLists
 ){
 
   int i = size();
@@ -406,14 +484,23 @@ void ParticleSystem::addParticle(
   interactions.push_back(0.0);
   interactions.push_back(0.0);
 
+  interactionsNorm.push_back(0.0);
+
   velocities.push_back(0.0);
   velocities.push_back(0.0);
 
   noise.push_back(0.0);
   noise.push_back(0.0);
+
+  if (initialiseCellLists){
+    repulsionCellList = CellList(repelDistance,Lx,Ly,size());
+    alignCellList = CellList(alignDistance,Lx,Ly,size());
+    attractCellList = CellList(attractDistance,Lx,Ly,size());
+  }
+  
 }
 
-void ParticleSystem::removeParticle(uint64_t i){
+void ParticleSystem::removeParticle(uint64_t i, bool initialiseCellLists){
   if (state.size() >= 3*i){
     state.erase(
       state.begin()+3*i,
@@ -440,6 +527,11 @@ void ParticleSystem::removeParticle(uint64_t i){
       interactions.begin()+2*i+2
     );
 
+    interactionsNorm.erase(
+      interactionsNorm.begin()+i,
+      interactionsNorm.begin()+i+1
+    );
+
 
     velocities.erase(
       velocities.begin()+2*i,
@@ -450,6 +542,13 @@ void ParticleSystem::removeParticle(uint64_t i){
       noise.begin()+2*i,
       noise.begin()+2*i+2
     );
+
+    if (initialiseCellLists){
+      repulsionCellList = CellList(repelDistance,Lx,Ly,size());
+      alignCellList = CellList(alignDistance,Lx,Ly,size());
+      attractCellList = CellList(attractDistance,Lx,Ly,size());
+    }
+
   }
 }
 
@@ -458,26 +557,35 @@ const float maxRepelStrength = 1.0;
 const float maxAlignStrength = 1.0;
 const float maxAttractStrength = 1.0;
 const float maxDiffusion = 1.0;
-const float maxSpeed = 20.0;
+const float v0 = 20.0;
 const float maxInertia = 1.0;
 
 void ParticleSystem::setParameter(Parameter p, double value){
-  double dc = 100.0*radius;//std::sqrt(Lx*Lx+Ly*Ly);
+  double dc = MAX_INTERACTION_RANGE*radius;//std::sqrt(Lx*Lx+Ly*Ly);
   switch (p){
     case RepelDistance:
-      repelDistance = value*dc;
+      if (repelDistance != value*dc){
+        repelDistance = value*dc;
+        repulsionCellList = CellList(repelDistance,Lx,Ly,size());
+      }
       break;
     case RepelStrength:
       repelStrength = value*maxRepelStrength;
       break;
     case AlignDistance:
-      alignDistance = value*dc;
+      if (alignDistance != value*dc){
+        alignDistance = value*dc;
+        alignCellList = CellList(alignDistance,Lx,Ly,size());
+      }
       break;
     case AlignStrength:
       alignStrength = value*maxAlignStrength;
       break;
     case AttractDistance:
-      attractDistance = value*dc;
+      if (attractDistance != value*dc){
+        attractDistance = value*dc;
+        attractCellList = CellList(attractDistance,Lx,Ly,size());
+      }
       break;
     case AttractStrength:
       attractStrength = value*maxAttractStrength;
@@ -486,7 +594,7 @@ void ParticleSystem::setParameter(Parameter p, double value){
       rotationalDiffusion = value*maxDiffusion;
       break;
     case Speed:
-      speed = value*radius*maxSpeed;
+      speed = value*radius*v0;
       break;
     case Inertia:
       momentOfInertia = value*maxInertia+0.001;

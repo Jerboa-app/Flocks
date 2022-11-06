@@ -46,7 +46,7 @@ const float dt = (1.0 / 60.0) / subSamples;
 
 const int saveFrequency = 1;
 
-const int N = 1024;
+const int N = 5000;
 
 // for smoothing delta numbers
 uint8_t frameId = 0;
@@ -170,7 +170,7 @@ int main(){
   newRecording.setState(false);
   newRecording.setProjection(textProj);
 
-  CheckButton colours(8.0*2+x*4.0,resY-32.0*2.0,8.0,8.0,"Colours",30);
+  CheckButton colours(8.0*2+x*6.0,resY-32.0*2.0,8.0,8.0,"Colours",30);
   colours.setState(true);
   colours.setProjection(textProj);
 
@@ -323,20 +323,34 @@ int main(){
       }
     }
 
+  //     sliders.add("repDist",8.0*2+x,resY-32.0,w,8.0,"Repel Distance");
+  // sliders.add("repStr",8.0*2+x*2.0,resY-32.0,w,8.0,"Repel Strength");
+  // sliders.add("alignDist",8.0*2+x*3.0,resY-32.0,w,8.0,"Align Dist.");
+  // sliders.add("alignStr",8.0*2+x*4.0,resY-32.0,w,8.0,"Align Str.");
+  // sliders.add("attrDist",8.0*2+x*5.0,resY-32.0,w,8.0,"Attract Dist.");
+  // sliders.add("attrStr",8.0*2+x*6.0,resY-32.0,w,8.0,"Attract Str.");
+  // sliders.add("diff",8.0*2,resY-32.0*2,w,8.0,"Diffusion");
+  // sliders.add("speed",8.0*2+x*1.0,resY-32.0*2.0,w,8.0,"Speed");
+  // sliders.add("inertia",8.0*2+x*2.0,resY-32.0*2.0,w,8.0,"Inertia");
+  // sliders.add("resp",8.0*2+x*3.0,resY-32.0*2.0,w,8.0,"Response Rate");
+
     float value = sliders.getPosition("repDist");
     particles.setParameter(ParticleSystem::Parameter::RepelDistance,value);
+    sliders.setLabel("repDist","Repel Distance "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
 
     value = sliders.getPosition("repStr");
     particles.setParameter(ParticleSystem::Parameter::RepelStrength,value);
 
     value = sliders.getPosition("alignDist");
     particles.setParameter(ParticleSystem::Parameter::AlignDistance,value);
+    sliders.setLabel("alignDist","Align Dist. "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
 
     value = sliders.getPosition("alignStr");
     particles.setParameter(ParticleSystem::Parameter::AlignStrength,value);
 
     value = sliders.getPosition("attrDist");
     particles.setParameter(ParticleSystem::Parameter::AttractDistance,value);
+    sliders.setLabel("attrDist","Attract Dist. "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
 
     value = sliders.getPosition("attrStr");
     particles.setParameter(ParticleSystem::Parameter::AttractStrength,value);
@@ -346,12 +360,14 @@ int main(){
 
     value = sliders.getPosition("speed");
     particles.setParameter(ParticleSystem::Parameter::Speed,value);
+    sliders.setLabel("speed","Speed "+fixedLengthNumber(value*v0,3));
 
     value = sliders.getPosition("inertia");
     particles.setParameter(ParticleSystem::Parameter::Inertia,value);
 
     value = sliders.getPosition("resp");
     particles.setParameter(ParticleSystem::Parameter::ResponseRate,value);
+    sliders.setLabel("resp","Response Rate "+fixedLengthNumber(value*maxResponseRate*180.0/M_PI,3)+" (deg)");
 
     particles.setTimeStep(dt*speed);
 
@@ -465,7 +481,7 @@ int main(){
       textRenderer.renderText(
         OD,
         "Eaten: "+std::to_string(int(eatenCounter)),
-        8.0*2+x*5.0,resY-32.0*2.0,
+        8.0*2+x*7.0,resY-32.0*2.0,
         0.25f,
         glm::vec3(0.0f,0.0f,0.0f)
       );

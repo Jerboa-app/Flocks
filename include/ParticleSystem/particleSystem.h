@@ -10,6 +10,8 @@ const uint64_t NULL_INDEX = uint64_t(-1);
 #include <iostream>
 #include <thread>
 
+#include <ParticleSystem/CellList/cellList.cpp>
+
 std::default_random_engine generator;
 std::uniform_real_distribution<double> U(0.0,1.0);
 std::normal_distribution<double> normal(0.0,1.0);
@@ -18,6 +20,11 @@ class ParticleSystem{
 
   friend class ParticleSystemRenderer;
   friend class Trajectory;
+  friend class CellList;
+
+  friend void repelInteraction(ParticleSystem * p, uint64_t i, uint64_t j);
+  friend void alignInteraction(ParticleSystem * p, uint64_t i, uint64_t j);
+  friend void attractInteraction(ParticleSystem * p, uint64_t i, uint64_t j);
 
 public:
 
@@ -33,7 +40,10 @@ public:
     rotationalDiffusion(0.1),dt(dt),collisionTime(10*dt),
     repelDistance(0.0), alignDistance(0.0*std::sqrt(density/(N*M_PI))), attractDistance(20.0),
     repelStrength(0.0), alignStrength(0.0), attractStrength(0.0), responseRate(1.0),
-    Lx(Lx), Ly(Ly)
+    Lx(Lx), Ly(Ly),
+    repulsionCellList(repelDistance,Lx,Ly,N),
+    alignCellList(alignDistance,Lx,Ly,N),
+    attractCellList(attractDistance,Lx,Ly,N)
   {
 
     floatState = new float [N*4];
@@ -64,7 +74,7 @@ public:
       double r = radius;
       double m = mass;
 
-      addParticle(x,y,theta,r,m);
+      addParticle(x,y,theta,r,m,false);
       uint64_t c = hash(i);
       if (cells[c] == NULL_INDEX){
         cells[c] = i;
@@ -162,9 +172,14 @@ private:
   std::vector<double> forces;
   std::vector<double> velocities;
   std::vector<double> interactions;
+  std::vector<double> interactionsNorm;
 
   std::vector<uint64_t> cells;
   std::vector<uint64_t> list;
+
+  CellList repulsionCellList;
+  CellList alignCellList;
+  CellList attractCellList;
 
   double Lx;
   double Ly;
@@ -212,8 +227,8 @@ private:
   double predVy;
   bool predatorActive;
 
-  void addParticle(double x, double y, double theta, double r, double m);
-  void removeParticle(uint64_t i);
+  void addParticle(double x, double y, double theta, double r, double m, bool initialiseCellLists=true);
+  void removeParticle(uint64_t i, bool initialiseCellLists = false);
 
   // Cell Linked List Collisions detection
   void resetLists();
@@ -245,6 +260,7 @@ private:
   //  changing the timestep can introduce instability if
   //  not accounted for
   void newTimeStepStates(double oldDt, double newDt);
+
 };
 
 #endif
