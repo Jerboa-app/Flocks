@@ -1,5 +1,7 @@
 # Flocks
 
+![example](https://github.com/Jerboa-app/Flocks/blob/main/resources/fonts/example.gif)
+
 A demo of a flocking model (Couzin like), **includes a playable predator!**
 
 Uses C++ with SFML and OpenGL
