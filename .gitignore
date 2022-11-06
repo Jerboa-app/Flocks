@@ -9,3 +9,5 @@ CMakeCache.txt
 phase
 Jerboa
 *.json
+parameters*
+trajectory*

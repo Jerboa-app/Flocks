@@ -38,6 +38,8 @@ public:
 
     floatState = new float [N*4];
 
+    predatorActive = false;
+
     dampingCoefficient = damping(mass,mass);
     restorationCoefficient = restoration(mass,mass);
 
@@ -77,7 +79,7 @@ public:
 
   void applyForce(double fx, double fy);
 
-  void step();
+  size_t step();
 
   void addParticle();
 
@@ -114,6 +116,8 @@ public:
       return meff/(collisionTime*collisionTime)*(std::log(coefficientOfRestitution)+M_PI*M_PI);
   }
 
+  double getRadius(){return radius;}
+
   // parameter getter
 
   ~ParticleSystem(){
@@ -135,6 +139,17 @@ public:
 
   void setParameter(Parameter p, double value);
   double getParameter(Parameter p);
+
+  void predatorState(
+    double x,
+    double y,
+    double vx,
+    double vy
+  ){
+    predX = x; predY = y; predVx = vx; predVy = vy;
+  }
+
+  void setPredatorActive(bool b){predatorActive = b;}
 
 private:
 
@@ -190,6 +205,12 @@ private:
   double responseRate;
 
   float * floatState;
+
+  double predX;
+  double predY;
+  double predVx;
+  double predVy;
+  bool predatorActive;
 
   void addParticle(double x, double y, double theta, double r, double m);
   void removeParticle(uint64_t i);
