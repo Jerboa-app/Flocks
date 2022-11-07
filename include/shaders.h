@@ -136,7 +136,7 @@ const char * predatorFragmentShader = "#version 330 core\n"
   " vec2 c = 2.0*gl_PointCoord-1.0;\n"
   " float d = length(c);\n"
   // bit of simple AA that adapts to zoom
-  " float dz = (1.0-smoothstep(1.0,4.0,zoom))*0.1;\n"
+  " float dz = (1.0-smoothstep(1.0,4.0,zoom))*0.05;\n"
   " float alpha = 1.0-smoothstep(0.99-dz,1.01+dz,d);\n"
   " colour = vec4(o_colour.rgb,alpha);\n"
   " float de = distance(c,0.66*vec2(cos(theta),-sin(theta)));\n"

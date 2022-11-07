@@ -24,16 +24,16 @@ public:
   ParticleSystem(
     uint64_t N,
     double dt = 1.0/300.0,
-    double density = 0.25,
+    double density = 0.1,
     double Lx = 1.0, double Ly = 0.90,
     uint64_t seed = clock()
   )
   : nParticles(N), radius(std::sqrt(density/(N*M_PI))),speed(std::sqrt(density/(N*M_PI))/0.2),drag(0.01),
     rotationalDrag(.01),mass(0.01), momentOfInertia(0.001),
-    rotationalDiffusion(0.1),dt(dt),collisionTime(10*dt),
+    rotationalDiffusion(0.1),dt(dt),collisionTime(5*dt),
     repelDistance(0.0), alignDistance(0.0*std::sqrt(density/(N*M_PI))), attractDistance(20.0),
-    repelStrength(0.0), alignStrength(0.0), attractStrength(0.0), responseRate(1.0),
-    Lx(Lx), Ly(Ly)
+    repelStrength(0.0), alignStrength(0.0), attractStrength(0.0), responseRate(1.0), blindAngle(M_PI/4.0),
+    alignmentPreference(0.5), Lx(Lx), Ly(Ly)
   {
 
     floatState = new float [N*4];
@@ -134,7 +134,8 @@ public:
     Diffusion,
     Speed,
     Inertia,
-    ResponseRate
+    ResponseRate,
+    BlindAngle
     };
 
   void setParameter(Parameter p, double value);
@@ -144,9 +145,10 @@ public:
     double x,
     double y,
     double vx,
-    double vy
+    double vy,
+    double r
   ){
-    predX = x; predY = y; predVx = vx; predVy = vy;
+    predX = x; predY = y; predVx = vx; predVy = vy; predRadius = r;
   }
 
   void setPredatorActive(bool b){predatorActive = b;}
@@ -202,6 +204,9 @@ private:
   double alignDistance;
   double alignStrength;
 
+  double blindAngle;
+  double alignmentPreference;
+
   double responseRate;
 
   float * floatState;
@@ -210,6 +215,7 @@ private:
   double predY;
   double predVx;
   double predVy;
+  double predRadius;
   bool predatorActive;
 
   void addParticle(double x, double y, double theta, double r, double m);

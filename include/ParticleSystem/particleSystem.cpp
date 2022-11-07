@@ -2,7 +2,8 @@
 #include <ParticleSystem/predator/predator.h>
 #include <time.h>
 
-const double MAX_PARTICLE_SPEED = MAX_PREDATOR_SPEED*10.0;
+const double MAX_PARTICLE_SPEED = MAX_PREDATOR_SPEED*40.0;
+const double MAX_INTERACTION_RANGE = 40.0;
 
 void ParticleSystem::resetLists(){
   for (int i = 0; i < Nc*Nc; i++){
@@ -187,15 +188,32 @@ size_t ParticleSystem::step(){
 
   for (int i = 0; i < size(); i++){
 
+    interactions[i*6] = 0.0;
+    interactions[i*6+1] = 0.0;
+    interactions[i*6+2] = 0.0;
+    interactions[i*6+3] = 0.0;
+    interactions[i*6+4] = 0.0;
+    interactions[i*6+5] = 0.0;
+
+    uint32_t nr = 0;
+    uint32_t nal = 0;
+    uint32_t nat = 0;
+
     double nx = 0.0;
     double ny = 0.0;
     double dtheta = 0.0;
-    double norm = 0.0;
+    
+    double normR = 0.0;
+    double normAl = 0.0;
+    double normAt = 0.0;
+
+    double ctheta = std::cos(state[i*3+2]);
+    double stheta = std::sin(state[i*3+2]);
+    double cang = M_PI-blindAngle;
     if (
       (repelDistance > 0 && repelStrength > 0) ||
       (alignDistance > 0 && alignStrength > 0) ||
       (attractDistance > 0 && attractStrength > 0)
-      
     ){
       for (int j = 0; j < size(); j++){
         if (j==i){continue;}
@@ -203,54 +221,92 @@ size_t ParticleSystem::step(){
         double ry = state[j*3+1]-state[i*3+1];
         double d2 = rx*rx+ry*ry;
         if (d2 == 0){continue;}
+
         if (repelDistance > 0.0 && d2 < rd){
-          // repel
+          nr += 1;
           double d = sqrt(d2);
-          nx -= repelStrength*rx/d;
-          ny -= repelStrength*ry/d;
-          norm += repelStrength;
+          double mx = rx/d; double my = ry/d;
+          // repel
+          interactions[i*6] -= repelStrength*mx;
+          interactions[i*6+1] -= repelStrength*my;
+          normR += repelStrength;
         } 
-        if (alignDistance > 0.0 && d2 >= rd && d2 < ra){
+        else if (nr == 0 && alignDistance > 0.0 && d2 >= rd && d2 < ra){
+          double d = sqrt(d2);
+          double mx = rx/d; double my = ry/d;
+          double alpha = std::acos(ctheta*mx+stheta*my);
+          if (alpha > cang){
+            continue;
+          }
+          nal += 1;
           // align
           double vjx = velocities[j*2];
           double vjy = velocities[j*2+1];
           double v = std::sqrt(vjx*vjx+vjy*vjy);
           if (v==0){continue;}
-          nx += alignStrength*vjx/v;
-          ny += alignStrength*vjy/v;
-          norm += alignStrength;
+          interactions[i*6+2] += alignStrength*vjx/v;
+          interactions[i*6+3] += alignStrength*vjy/v;
+          normAl += alignStrength;
         }
-        if (attractDistance > 0.0 && d2 >= rd && d2 >= ra && d2 < rat){
-          //attract
+        else if (nr == 0 && attractDistance > 0.0 && d2 >= rd && d2 >= ra && d2 < rat){
           double d = sqrt(d2);
-          nx += attractStrength*rx/d;
-          ny += attractStrength*ry/d;
-          norm += attractStrength;
+          double mx = rx/d; double my = ry/d;
+          double alpha = std::acos(ctheta*mx+stheta*my);
+          if (alpha > cang){
+            continue;
+          }
+          nat += 1;
+          //attract
+          interactions[i*6+4] += attractStrength*mx;
+          interactions[i*6+5] += attractStrength*my;
+          normAt += attractStrength;
         }
       }
     }
 
+    if (normR > 0){
+      nx = interactions[i*6]/normR;
+      ny = interactions[i*6+1]/normR;
+    }
+    else if (normAl > 0 && normAt > 0){
+      nx = alignmentPreference*interactions[i*6+2]/normAl+(1.0-alignmentPreference)*interactions[i*6+4]/normAt;
+      ny = alignmentPreference*interactions[i*6+3]/normAl+(1.0-alignmentPreference)*interactions[i*6+5]/normAt;
+    }
+    else if (normAl > 0 && normAt == 0){
+      nx = interactions[i*6+2]/normAl;
+      ny = interactions[i*6+3]/normAl;
+    }
+    else if (normAl == 0 && normAt > 0){
+      nx = interactions[i*6+4]/normAt;
+      ny = interactions[i*6+5]/normAt;
+    }
+
     double speedMultiplier = 1.0;
 
-    if (norm > 0){
-      nx /= norm;
-      ny /= norm;
-      if (predatorActive){
-        double px = state[i*3]-predX;
-        double py = state[i*3+1]-predY;
-        double d2 = px*px+py*py;
-        double vp = (predVx*predVx+predVy*predVy);
-        double d = std::sqrt(d2);
-        double mag = (1.0+vp)/(d2/(radius));
+    if (predatorActive){
+      double px = state[i*3]-predX;
+      double py = state[i*3+1]-predY;
+      double d2 = px*px+py*py;
+      double vp = (predVx*predVx+predVy*predVy);
+      double d = std::sqrt(d2);
+
+      double alpha = std::acos(ctheta*(-1.0*px)/d+stheta*(-1.0*py)/d);
+      if (alpha < cang){
+        
+        double mag = 10.0*(1.0+vp)/(d2/radius);
         nx = (nx + mag*px/d)/(1.0+mag);
         ny = (ny + mag*py/d)/(1.0+mag);
-        speedMultiplier = 1.0+radius/d2;
-
-        if (d < radius){
-          // eaten!
-          toRemove.push_back(i);
-        }
+        speedMultiplier = 1.0+(radius+predRadius)/d2;
+      
       }
+
+      if (d < radius*2.0){
+        // eaten!
+        toRemove.push_back(i);
+      }
+    }
+
+    if(nr > 0 || nal > 0 || nat > 0){
       dtheta = std::cos(state[i*3+2])*ny - std::sin(state[i*3+2])*nx;
     }
 
@@ -347,7 +403,7 @@ size_t ParticleSystem::step(){
   }
 
   for (int i = 0; i < toRemove.size(); i++){
-    removeParticle(i);
+    removeParticle(toRemove[i]);
   }
 
   double updates = (clock()-tic)/double(CLOCKS_PER_SEC);
@@ -402,6 +458,10 @@ void ParticleSystem::addParticle(
 
   interactions.push_back(0.0);
   interactions.push_back(0.0);
+  interactions.push_back(0.0);
+  interactions.push_back(0.0);
+  interactions.push_back(0.0);
+  interactions.push_back(0.0);
 
   velocities.push_back(0.0);
   velocities.push_back(0.0);
@@ -434,7 +494,7 @@ void ParticleSystem::removeParticle(uint64_t i){
 
     interactions.erase(
       interactions.begin()+2*i,
-      interactions.begin()+2*i+2
+      interactions.begin()+2*i+6
     );
 
 
@@ -454,15 +514,15 @@ const float maxResponseRate = 2.0;
 const float maxRepelStrength = 1.0;
 const float maxAlignStrength = 1.0;
 const float maxAttractStrength = 1.0;
-const float maxDiffusion = 1.0;
-const float maxSpeed = 20.0;
+const float maxDiffusion = M_PI;
+const float v0 = 10.0;
 const float maxInertia = 1.0;
 
 void ParticleSystem::setParameter(Parameter p, double value){
-  double dc = 100.0*radius;//std::sqrt(Lx*Lx+Ly*Ly);
+  double dc = MAX_INTERACTION_RANGE*radius;//std::sqrt(Lx*Lx+Ly*Ly);
   switch (p){
     case RepelDistance:
-      repelDistance = value*dc;
+      repelDistance = dc*value;
       break;
     case RepelStrength:
       repelStrength = value*maxRepelStrength;
@@ -483,7 +543,7 @@ void ParticleSystem::setParameter(Parameter p, double value){
       rotationalDiffusion = value*maxDiffusion;
       break;
     case Speed:
-      speed = value*radius*maxSpeed;
+      speed = value*v0*radius;
       break;
     case Inertia:
       momentOfInertia = value*maxInertia+0.001;
@@ -491,6 +551,8 @@ void ParticleSystem::setParameter(Parameter p, double value){
     case ResponseRate:
       responseRate = value*maxResponseRate;
       break;
+    case BlindAngle:
+      blindAngle = value*M_PI;
   }
 }
 
@@ -516,5 +578,7 @@ double ParticleSystem::getParameter(Parameter p){
       return momentOfInertia;
     case ResponseRate:
       return responseRate;
+    case BlindAngle:
+      return blindAngle;
   }
 }
