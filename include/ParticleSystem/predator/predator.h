@@ -1,7 +1,7 @@
 #ifndef PREDATOR_H
 #define PREDATOR_H
 
-const double MAX_PREDATOR_SPEED = 20.0;
+const double MAX_PREDATOR_SPEED = 15.0;
 
 class Predator {
     public:
@@ -14,7 +14,7 @@ class Predator {
             initialiseGL();
             accelerationMagnitude = r;
             maxSpeed = MAX_PREDATOR_SPEED*r;
-            turningRate = 0.01;
+            turningRate = 0.05;
             Lx = 1.0;
             Ly = 0.9;
         }
@@ -59,6 +59,8 @@ class Predator {
         void setBoundary(double lx, double ly){
             Lx = lx; Ly = ly;
         }
+
+        double getRadius(){return radius;}
 
     private:
 

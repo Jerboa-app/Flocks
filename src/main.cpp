@@ -46,7 +46,7 @@ const float dt = (1.0 / 60.0) / subSamples;
 
 const int saveFrequency = 1;
 
-const int N = 1024;
+const int N = 512;
 
 // for smoothing delta numbers
 uint8_t frameId = 0;
@@ -83,7 +83,7 @@ int main(){
 
   sf::RenderWindow window(
     sf::VideoMode(resX,resY),
-    "Big Nuts Rise",
+    "Birbs",
     sf::Style::Close|sf::Style::Titlebar,
     contextSettings
   );
@@ -98,9 +98,9 @@ int main(){
   // the core simulation
   ParticleSystem particles(N,dt);
   // handles rendering - separation of concerns
-  ParticleSystemRenderer pRender(N,60*5.0);
+  ParticleSystemRenderer pRender(N,60*30.0);
   // player predator
-  Predator predator(0.5,0.5,0.0,particles.getRadius());
+  Predator predator(0.5,0.5,0.0,particles.getRadius()*2.0);
   bool predatorActive = false;
 
   sf::Clock clock;
@@ -150,27 +150,29 @@ int main(){
   sliders.add("speed",8.0*2+x*1.0,resY-32.0*2.0,w,8.0,"Speed");
   sliders.add("inertia",8.0*2+x*2.0,resY-32.0*2.0,w,8.0,"Inertia");
   sliders.add("resp",8.0*2+x*3.0,resY-32.0*2.0,w,8.0,"Response Rate");
+  sliders.add("blind",8.0*2+x*4.5,resY-32.0*2.0,w,8.0,"Blind Angle");
 
   std::default_random_engine generator;
   std::uniform_real_distribution<double> U(0.0,1.0);
 
   sliders.setPosition("particles",0.25);
-  sliders.setPosition("repDist",U(generator));
-  sliders.setPosition("repStr",U(generator));
+  sliders.setPosition("repDist",0.025);
+  sliders.setPosition("repStr",1.0);
   sliders.setPosition("alignDist",U(generator));
-  sliders.setPosition("alignStr",U(generator));
+  sliders.setPosition("alignStr",1.0);
   sliders.setPosition("attrDist",U(generator));
-  sliders.setPosition("attrStr",U(generator));
+  sliders.setPosition("attrStr",1.0);
   sliders.setPosition("diff",0.1);
   sliders.setPosition("speed",0.5);
   sliders.setPosition("inertia",0.0);
   sliders.setPosition("resp",0.5);
+  sliders.setPosition("blind",0.031831); // 0.2 rad
   
   Button newRecording(resX-64.0,resY-48.0,8.0,8.0,"Record",30);
   newRecording.setState(false);
   newRecording.setProjection(textProj);
 
-  CheckButton colours(8.0*2+x*4.0,resY-32.0*2.0,8.0,8.0,"Colours",30);
+  CheckButton colours(8.0*2+x*6.0,resY-32.0*2.0,8.0,8.0,"Colours",30);
   colours.setState(true);
   colours.setProjection(textProj);
 
@@ -325,18 +327,21 @@ int main(){
 
     float value = sliders.getPosition("repDist");
     particles.setParameter(ParticleSystem::Parameter::RepelDistance,value);
+    sliders.setLabel("repDist","Repel Distance "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
 
     value = sliders.getPosition("repStr");
     particles.setParameter(ParticleSystem::Parameter::RepelStrength,value);
 
     value = sliders.getPosition("alignDist");
     particles.setParameter(ParticleSystem::Parameter::AlignDistance,value);
+    sliders.setLabel("alignDist","Align Dist. "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
 
     value = sliders.getPosition("alignStr");
     particles.setParameter(ParticleSystem::Parameter::AlignStrength,value);
 
     value = sliders.getPosition("attrDist");
     particles.setParameter(ParticleSystem::Parameter::AttractDistance,value);
+    sliders.setLabel("attrDist","Attract Dist. "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
 
     value = sliders.getPosition("attrStr");
     particles.setParameter(ParticleSystem::Parameter::AttractStrength,value);
@@ -346,12 +351,18 @@ int main(){
 
     value = sliders.getPosition("speed");
     particles.setParameter(ParticleSystem::Parameter::Speed,value);
+    sliders.setLabel("speed","Speed "+fixedLengthNumber(value*v0,3));
 
     value = sliders.getPosition("inertia");
     particles.setParameter(ParticleSystem::Parameter::Inertia,value);
 
     value = sliders.getPosition("resp");
     particles.setParameter(ParticleSystem::Parameter::ResponseRate,value);
+    sliders.setLabel("resp","Response Rate "+fixedLengthNumber(value*maxResponseRate*180.0/M_PI,3)+" (deg)");
+
+    value = sliders.getPosition("blind");
+    particles.setParameter(ParticleSystem::Parameter::BlindAngle,value);
+    sliders.setLabel("blind","Blind Angle "+fixedLengthNumber(value*180.0,3)+" (deg)");
 
     particles.setTimeStep(dt*speed);
 
@@ -361,7 +372,7 @@ int main(){
         particles.setPredatorActive(predatorActive);
         if (predatorActive){
             std::vector<double> s = predator.getState();
-            particles.predatorState(s[0],s[1],s[2],s[3]);
+            particles.predatorState(s[0],s[1],s[2],s[3],predator.getRadius());
         }
         size_t eaten = particles.step();
         eatenCounter += eaten;
@@ -415,7 +426,7 @@ int main(){
       textRenderer.renderText(
         OD,
         "Recording to file:\n    "+record.fileName(),
-        resX-320.0,resY-64.0*1,
+        resX-320.0,resY-64.0*1.25,
         0.25f,
         glm::vec3(0.0f,0.0f,0.0f)
       );
@@ -464,7 +475,7 @@ int main(){
       textRenderer.renderText(
         OD,
         "Eaten: "+std::to_string(int(eatenCounter)),
-        8.0*2+x*5.0,resY-32.0*2.0,
+        8.0*2+x*6.5,resY-32.0*2.0,
         0.25f,
         glm::vec3(0.0f,0.0f,0.0f)
       );
