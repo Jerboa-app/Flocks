@@ -83,7 +83,7 @@ int main(){
 
   sf::RenderWindow window(
     sf::VideoMode(resX,resY),
-    "Big Nuts Rise",
+    "Birbs",
     sf::Style::Close|sf::Style::Titlebar,
     contextSettings
   );

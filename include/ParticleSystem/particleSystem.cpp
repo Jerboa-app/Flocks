@@ -515,7 +515,7 @@ const float maxRepelStrength = 1.0;
 const float maxAlignStrength = 1.0;
 const float maxAttractStrength = 1.0;
 const float maxDiffusion = M_PI;
-const float v0 = 10.0;
+const float v0 = 20.0;
 const float maxInertia = 1.0;
 
 void ParticleSystem::setParameter(Parameter p, double value){
