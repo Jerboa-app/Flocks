@@ -182,6 +182,9 @@ int main(){
   vicsek.setState(true);
   vicsek.setProjection(textProj);
 
+  vicsek.setState(false);
+  periodic.setState(false);
+
   double oldMouseX = 0.0;
   double oldMouseY = 0.0;
 

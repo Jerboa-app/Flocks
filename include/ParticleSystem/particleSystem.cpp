@@ -172,62 +172,17 @@ void ParticleSystem::newTimeStepStates(double oldDt, double newDt){
   }
 }
 
-size_t ParticleSystem::step(){
-  clock_t tic = clock();
-  if (collisions){
-    resetLists();
-    populateLists();
-    float setup = (clock()-tic)/float(CLOCKS_PER_SEC);
-    tic = clock();
-
-    for (int a = 0; a < Nc; a++){
-      for (int b = 0; b < Nc; b++){
-
-        // draw it out, we can get away without
-        //  checking some cells! Left commented here for
-        //  understanding
-        cellCollisions(a,b,a,b);
-        //cellCollisions(a,b,a-1,b-1);
-        //cellCollisions(a,b,a-1,b+1);
-        cellCollisions(a,b,a+1,b+1);
-        cellCollisions(a,b,a+1,b-1);
-        //cellCollisions(a,b,a-1,b);
-        cellCollisions(a,b,a+1,b);
-        //cellCollisions(a,b,a,b-1);
-        cellCollisions(a,b,a,b+1);
-      }
-    }
-  }
-
-  float col = (clock()-tic)/float(CLOCKS_PER_SEC);
-  tic = clock();
-
-  double cc = drag*dt/2.0;
-  double D = std::sqrt(2.0*rotationalDiffusion/dt);
-
-  int cnt = 0;
-  double rd = repelDistance*repelDistance;
-  double ra = alignDistance*alignDistance;
-  double rat = attractDistance*attractDistance;
-
-  std::vector<uint64_t> toRemove;
-
-  for (int i = 0; i < size(); i++){
-
-    interactions[i*6] = 0.0;
-    interactions[i*6+1] = 0.0;
-    interactions[i*6+2] = 0.0;
-    interactions[i*6+3] = 0.0;
-    interactions[i*6+4] = 0.0;
-    interactions[i*6+5] = 0.0;
+void ParticleSystem::metricInteractions(uint64_t i, double & nx, double & ny){
+    double rd = repelDistance*repelDistance;
+    double ra = alignDistance*alignDistance;
+    double rat = attractDistance*attractDistance;
 
     uint32_t nr = 0;
     uint32_t nal = 0;
     uint32_t nat = 0;
 
-    double nx = std::cos(state[i*3+2]);
-    double ny = std::sin(state[i*3+2]);
-    double dtheta = 0.0;
+    nx = std::cos(state[i*3+2]);
+    ny = std::sin(state[i*3+2]);
     
     double normR = 0.0;
     double normAl = 0.0;
@@ -329,6 +284,59 @@ size_t ParticleSystem::step(){
 
     nx = dx;
     ny = dy;
+}
+
+size_t ParticleSystem::step(){
+  clock_t tic = clock();
+  if (collisions){
+    resetLists();
+    populateLists();
+    float setup = (clock()-tic)/float(CLOCKS_PER_SEC);
+    tic = clock();
+
+    for (int a = 0; a < Nc; a++){
+      for (int b = 0; b < Nc; b++){
+
+        // draw it out, we can get away without
+        //  checking some cells! Left commented here for
+        //  understanding
+        cellCollisions(a,b,a,b);
+        //cellCollisions(a,b,a-1,b-1);
+        //cellCollisions(a,b,a-1,b+1);
+        cellCollisions(a,b,a+1,b+1);
+        cellCollisions(a,b,a+1,b-1);
+        //cellCollisions(a,b,a-1,b);
+        cellCollisions(a,b,a+1,b);
+        //cellCollisions(a,b,a,b-1);
+        cellCollisions(a,b,a,b+1);
+      }
+    }
+  }
+
+  float col = (clock()-tic)/float(CLOCKS_PER_SEC);
+  tic = clock();
+
+  double cc = drag*dt/2.0;
+  double D = std::sqrt(2.0*rotationalDiffusion/dt);
+
+  int cnt = 0;
+
+  std::vector<uint64_t> toRemove;
+
+  for (int i = 0; i < size(); i++){
+
+    interactions[i*6] = 0.0;
+    interactions[i*6+1] = 0.0;
+    interactions[i*6+2] = 0.0;
+    interactions[i*6+3] = 0.0;
+    interactions[i*6+4] = 0.0;
+    interactions[i*6+5] = 0.0;
+
+    double nx = 0.0;
+    double ny = 0.0;
+    double dtheta = 0.0;
+
+    metricInteractions(i,nx,ny);
 
     double speedMultiplier = 1.0;
 
@@ -355,6 +363,10 @@ size_t ParticleSystem::step(){
       double vp = (predVx*predVx+predVy*predVy);
       double d = std::sqrt(d2);
 
+      double ctheta = std::cos(state[i*3+2]);
+      double stheta = std::sin(state[i*3+2]);
+      double cang = M_PI-blindAngle;
+
       double alpha = std::acos(ctheta*(-1.0*px)/d+stheta*(-1.0*py)/d);
       if (alpha < cang){
         
@@ -371,9 +383,8 @@ size_t ParticleSystem::step(){
       }
     }
 
-    if(nr > 0 || nal > 0 || nat > 0){
-      dtheta = std::cos(state[i*3+2])*ny - std::sin(state[i*3+2])*nx;
-    }
+
+    dtheta = std::cos(state[i*3+2])*ny - std::sin(state[i*3+2])*nx;
     
     noise[i*2+1] = noise[i*2];
     noise[i*2] = normal(generator);

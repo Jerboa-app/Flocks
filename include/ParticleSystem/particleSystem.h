@@ -169,6 +169,9 @@ private:
   std::vector<uint64_t> cells;
   std::vector<uint64_t> list;
 
+  std::vector<double> neighbourSeparations;
+  std::vector<double> neighbourBuffer;
+
   double Lx;
   double Ly;
 
@@ -221,6 +224,9 @@ private:
 
   void addParticle(double x, double y, double theta, double r, double m);
   void removeParticle(uint64_t i);
+
+  void metricInteractions(uint64_t i, double & nx, double & ny);
+  void topologicalInteractions(uint64_t i, uint64_t neighbours, double & nx, double & ny);
 
   // Cell Linked List Collisions detection
   void resetLists();
