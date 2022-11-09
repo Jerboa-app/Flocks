@@ -16,11 +16,8 @@ void Trajectory::takeReading(ParticleSystem & p){
             p.orderParameter(),
             speed,
             p.getParameter(ParticleSystem::Parameter::RepelDistance),
-            p.getParameter(ParticleSystem::Parameter::RepelStrength),
             p.getParameter(ParticleSystem::Parameter::AlignDistance),
-            p.getParameter(ParticleSystem::Parameter::AlignStrength),
             p.getParameter(ParticleSystem::Parameter::AttractDistance),
-            p.getParameter(ParticleSystem::Parameter::AttractStrength),
             p.getParameter(ParticleSystem::Parameter::Diffusion),
             p.getParameter(ParticleSystem::Parameter::Speed),
             p.getParameter(ParticleSystem::Parameter::Inertia),
@@ -65,11 +62,8 @@ void Trajectory::threadedSave(std::vector<std::vector<State>> trajectory){
                      << parameters[t].order << ","
                      << parameters[t].speed << ","
                      << parameters[t].rd << ","
-                     << parameters[t].rs << ","
                      << parameters[t].ad << ","
-                     << parameters[t].as << ","
                      << parameters[t].attrd << ","
-                     << parameters[t].attrs << ","
                      << parameters[t].diff << ","
                      << parameters[t].v0 << ","
                      << parameters[t].inertia << ","

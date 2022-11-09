@@ -173,9 +173,9 @@ size_t ParticleSystem::step(){
 
       }
     }
-    float col = (clock()-tic)/float(CLOCKS_PER_SEC);
   }
 
+  float col = (clock()-tic)/float(CLOCKS_PER_SEC);
   tic = clock();
 
   double cc = drag*dt/2.0;
@@ -213,9 +213,9 @@ size_t ParticleSystem::step(){
     double stheta = std::sin(state[i*3+2]);
     double cang = M_PI-blindAngle;
     if (
-      (repelDistance > 0 && repelStrength > 0) ||
-      (alignDistance > 0 && alignStrength > 0) ||
-      (attractDistance > 0 && attractStrength > 0)
+      (repelDistance > 0) ||
+      (alignDistance > 0) ||
+      (attractDistance > 0)
     ){
       for (int j = 0; j < size(); j++){
         if (j==i){continue;}
@@ -229,8 +229,8 @@ size_t ParticleSystem::step(){
           double d = sqrt(d2);
           double mx = rx/d; double my = ry/d;
           // repel
-          interactions[i*6] -= repelStrength*mx;
-          interactions[i*6+1] -= repelStrength*my;
+          interactions[i*6] -= mx;
+          interactions[i*6+1] -= my;
         } 
         else if (nr == 0 && alignDistance > 0.0 && d2 >= rd && d2 < ra){
           double d = sqrt(d2);
@@ -245,8 +245,8 @@ size_t ParticleSystem::step(){
           double vjy = velocities[j*2+1];
           double v = std::sqrt(vjx*vjx+vjy*vjy);
           if (v==0){continue;}
-          interactions[i*6+2] += alignStrength*vjx/v;
-          interactions[i*6+3] += alignStrength*vjy/v;
+          interactions[i*6+2] += vjx/v;
+          interactions[i*6+3] += vjy/v;
         }
         else if (nr == 0 && attractDistance > 0.0 && d2 >= rd && d2 >= ra && d2 < rat){
           double d = sqrt(d2);
@@ -257,8 +257,8 @@ size_t ParticleSystem::step(){
           }
           nat += 1;
           //attract
-          interactions[i*6+4] += attractStrength*mx;
-          interactions[i*6+5] += attractStrength*my;
+          interactions[i*6+4] += mx;
+          interactions[i*6+5] += my;
         }
       }
     }
@@ -318,8 +318,6 @@ size_t ParticleSystem::step(){
     if(nr > 0 || nal > 0 || nat > 0){
       dtheta = std::cos(state[i*3+2])*ny - std::sin(state[i*3+2])*nx;
     }
-    dtheta += std::fmod(normal(generator)*rotationalDiffusion,2.0*M_PI);
-
     
     noise[i*2+1] = noise[i*2];
     noise[i*2] = normal(generator);
@@ -348,8 +346,8 @@ size_t ParticleSystem::step(){
 
     state[i*3] = 2.0*bt*x - at*xp + (bt*dtdt/parameters[i*2+1])*ax;
     state[i*3+1] = 2.0*bt*y - at*yp + (bt*dtdt/parameters[i*2+1])*ay;
-    state[i*3+2] = 2.0*br*theta - ar*thetap + (br*dtdt/momentOfInertia)*atheta;//+ (br*dt/(2.0*momentOfInertia))*(noise[i*2]+noise[i*2+1])*dt*rotationalDrag*D;
-
+    state[i*3+2] = 2.0*br*theta - ar*thetap + (br*dtdt/momentOfInertia)*atheta + (br*dt/(2.0*momentOfInertia))*(noise[i*2]+noise[i*2+1])*dt*rotationalDrag*D;
+    
     lastState[i*3] = x;
     lastState[i*3+1] = y;
     lastState[i*3+2] = theta;
@@ -520,11 +518,8 @@ void ParticleSystem::removeParticle(uint64_t i){
   }
 }
 
-const float maxResponseRate = 2.0;
-const float maxRepelStrength = 1.0;
-const float maxAlignStrength = 1.0;
-const float maxAttractStrength = 1.0;
-const float maxDiffusion = 0.2;
+const float maxResponseRate = M_PI/4.0;
+const float maxDiffusion = M_PI;
 const float v0 = 20.0;
 const float maxInertia = 1.0;
 
@@ -534,21 +529,14 @@ void ParticleSystem::setParameter(Parameter p, double value){
     case RepelDistance:
       repelDistance = dc*value;
       break;
-    case RepelStrength:
-      repelStrength = value*maxRepelStrength;
-      break;
     case AlignDistance:
       alignDistance = value*dc;
-      break;
-    case AlignStrength:
-      alignStrength = value*maxAlignStrength;
       break;
     case AttractDistance:
       attractDistance = value*dc;
       break;
-    case AttractStrength:
-      attractStrength = value*maxAttractStrength;
-      break;
+    case AlignPreference:
+      alignmentPreference = value;
     case Diffusion:
       rotationalDiffusion = value*maxDiffusion;
       break;
@@ -570,16 +558,12 @@ double ParticleSystem::getParameter(Parameter p){
   switch (p){
     case RepelDistance:
       return repelDistance; 
-    case RepelStrength:
-      return repelStrength;
     case AlignDistance:
       return alignDistance;
-    case AlignStrength:
-      return alignStrength;
     case AttractDistance:
       return attractDistance;
-    case AttractStrength:
-      return attractStrength;
+    case AlignPreference:
+      return alignmentPreference;
     case Diffusion:
       return rotationalDiffusion;
     case Speed:

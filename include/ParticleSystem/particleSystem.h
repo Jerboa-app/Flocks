@@ -29,10 +29,10 @@ public:
     uint64_t seed = clock()
   )
   : nParticles(N), radius(std::sqrt(density/(N*M_PI))),speed(std::sqrt(density/(N*M_PI))/0.2),drag(0.01),
-    rotationalDrag(.01),mass(0.01), momentOfInertia(0.001),
+    rotationalDrag(.01),mass(0.01), momentOfInertia(0.0001),
     rotationalDiffusion(0.1),dt(dt),collisionTime(5*dt),
     repelDistance(0.0), alignDistance(0.0*std::sqrt(density/(N*M_PI))), attractDistance(20.0),
-    repelStrength(0.0), alignStrength(0.0), attractStrength(0.0), responseRate(1.0), blindAngle(M_PI/4.0),
+    responseRate(1.0), blindAngle(M_PI/4.0),
     alignmentPreference(0.5), Lx(Lx), Ly(Ly), collisions(true)
   {
 
@@ -125,12 +125,10 @@ public:
   }
 
   enum Parameter {
-    RepelDistance, 
-    RepelStrength, 
+    RepelDistance,  
     AlignDistance, 
-    AlignStrength, 
-    AttractDistance, 
-    AttractStrength,
+    AttractDistance,
+    AlignPreference,
     Diffusion,
     Speed,
     Inertia,
@@ -198,13 +196,8 @@ private:
   double dtdt;
 
   double repelDistance;
-  double repelStrength;
-
   double attractDistance;
-  double attractStrength;
-
   double alignDistance;
-  double alignStrength;
 
   double blindAngle;
   double alignmentPreference;

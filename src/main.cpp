@@ -141,12 +141,10 @@ int main(){
 
   sliders.add("particles",8.0,resY-32.0,w,8.0,"Particles");
   sliders.add("repDist",8.0*2+x,resY-32.0,w,8.0,"Repel Distance");
-  sliders.add("repStr",8.0*2+x*2.0,resY-32.0,w,8.0,"Repel Strength");
-  sliders.add("alignDist",8.0*2+x*3.0,resY-32.0,w,8.0,"Align Dist.");
-  sliders.add("alignStr",8.0*2+x*4.0,resY-32.0,w,8.0,"Align Str.");
-  sliders.add("attrDist",8.0*2+x*5.0,resY-32.0,w,8.0,"Attract Dist.");
-  sliders.add("attrStr",8.0*2+x*6.0,resY-32.0,w,8.0,"Attract Str.");
-  sliders.add("diff",8.0*2,resY-32.0*2,w,8.0,"Diffusion");
+  sliders.add("alignDist",8.0*2+x*2.0,resY-32.0,w,8.0,"Align Dist.");
+  sliders.add("attrDist",8.0*2+x*3.0,resY-32.0,w,8.0,"Attract Dist.");
+  sliders.add("pref",8.0*2+x*4.0,resY-32.0,w,8.0,"Align/Attract Preference");
+  sliders.add("diff",8.0,resY-32.0*2,w,8.0,"Diffusion");
   sliders.add("speed",8.0*2+x*1.0,resY-32.0*2.0,w,8.0,"Speed");
   sliders.add("resp",8.0*2+x*2.0,resY-32.0*2.0,w,8.0,"Response Rate");
   sliders.add("blind",8.0*2+x*3.5,resY-32.0*2.0,w,8.0,"Blind Angle");
@@ -156,11 +154,9 @@ int main(){
 
   sliders.setPosition("particles",0.25);
   sliders.setPosition("repDist",0.025);
-  sliders.setPosition("repStr",1.0);
   sliders.setPosition("alignDist",U(generator));
-  sliders.setPosition("alignStr",1.0);
   sliders.setPosition("attrDist",U(generator));
-  sliders.setPosition("attrStr",1.0);
+  sliders.setPosition("pref",0.5);
   sliders.setPosition("diff",0.1);
   sliders.setPosition("speed",0.5);
   sliders.setPosition("resp",0.5);
@@ -332,22 +328,17 @@ int main(){
     particles.setParameter(ParticleSystem::Parameter::RepelDistance,value);
     sliders.setLabel("repDist","Repel Distance "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
 
-    value = sliders.getPosition("repStr");
-    particles.setParameter(ParticleSystem::Parameter::RepelStrength,value);
-
     value = sliders.getPosition("alignDist");
     particles.setParameter(ParticleSystem::Parameter::AlignDistance,value);
     sliders.setLabel("alignDist","Align Dist. "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
-
-    value = sliders.getPosition("alignStr");
-    particles.setParameter(ParticleSystem::Parameter::AlignStrength,value);
 
     value = sliders.getPosition("attrDist");
     particles.setParameter(ParticleSystem::Parameter::AttractDistance,value);
     sliders.setLabel("attrDist","Attract Dist. "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
 
-    value = sliders.getPosition("attrStr");
-    particles.setParameter(ParticleSystem::Parameter::AttractStrength,value);
+    value = sliders.getPosition("pref");
+    particles.setParameter(ParticleSystem::Parameter::AlignPreference,value);
+    sliders.setLabel("pref","Align/Attract Preference: "+fixedLengthNumber(value,3));
 
     value = sliders.getPosition("diff");
     particles.setParameter(ParticleSystem::Parameter::Diffusion,value);
