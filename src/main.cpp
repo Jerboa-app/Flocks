@@ -148,9 +148,8 @@ int main(){
   sliders.add("attrStr",8.0*2+x*6.0,resY-32.0,w,8.0,"Attract Str.");
   sliders.add("diff",8.0*2,resY-32.0*2,w,8.0,"Diffusion");
   sliders.add("speed",8.0*2+x*1.0,resY-32.0*2.0,w,8.0,"Speed");
-  sliders.add("inertia",8.0*2+x*2.0,resY-32.0*2.0,w,8.0,"Inertia");
-  sliders.add("resp",8.0*2+x*3.0,resY-32.0*2.0,w,8.0,"Response Rate");
-  sliders.add("blind",8.0*2+x*4.5,resY-32.0*2.0,w,8.0,"Blind Angle");
+  sliders.add("resp",8.0*2+x*2.0,resY-32.0*2.0,w,8.0,"Response Rate");
+  sliders.add("blind",8.0*2+x*3.5,resY-32.0*2.0,w,8.0,"Blind Angle");
 
   std::default_random_engine generator;
   std::uniform_real_distribution<double> U(0.0,1.0);
@@ -164,13 +163,16 @@ int main(){
   sliders.setPosition("attrStr",1.0);
   sliders.setPosition("diff",0.1);
   sliders.setPosition("speed",0.5);
-  sliders.setPosition("inertia",0.0);
   sliders.setPosition("resp",0.5);
   sliders.setPosition("blind",0.031831); // 0.2 rad
   
   Button newRecording(resX-64.0,resY-48.0,8.0,8.0,"Record",30);
   newRecording.setState(false);
   newRecording.setProjection(textProj);
+
+  CheckButton collisions(8.0*2+x*5.0,resY-32.0*2.0,8.0,8.0,"Collisions",30);
+  collisions.setState(true);
+  collisions.setProjection(textProj);
 
   CheckButton colours(8.0*2+x*6.0,resY-32.0*2.0,8.0,8.0,"Colours",30);
   colours.setState(true);
@@ -280,6 +282,7 @@ int main(){
         // buttons
         newRecording.clicked(pos.x,resY-pos.y);
         colours.clicked(pos.x,resY-pos.y);
+        collisions.clicked(pos.x,resY-pos.y);
 
         // multiply by inverse of current projection
         glm::vec4 worldPos = camera.screenToWorld(pos.x,pos.y);
@@ -353,9 +356,6 @@ int main(){
     particles.setParameter(ParticleSystem::Parameter::Speed,value);
     sliders.setLabel("speed","Speed "+fixedLengthNumber(value*v0,3));
 
-    value = sliders.getPosition("inertia");
-    particles.setParameter(ParticleSystem::Parameter::Inertia,value);
-
     value = sliders.getPosition("resp");
     particles.setParameter(ParticleSystem::Parameter::ResponseRate,value);
     sliders.setLabel("resp","Response Rate "+fixedLengthNumber(value*maxResponseRate*180.0/M_PI,3)+" (deg)");
@@ -370,6 +370,7 @@ int main(){
       for (int s = 0; s < subSamples; s++){
 
         particles.setPredatorActive(predatorActive);
+        particles.setCollisions(collisions.getState());
         if (predatorActive){
             std::vector<double> s = predator.getState();
             particles.predatorState(s[0],s[1],s[2],s[3],predator.getRadius());
@@ -501,6 +502,12 @@ int main(){
     );
 
     colours.draw(
+      textRenderer,
+      OD,
+      0.25f
+    );
+
+    collisions.draw(
       textRenderer,
       OD,
       0.25f

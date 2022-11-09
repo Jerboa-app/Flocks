@@ -149,31 +149,33 @@ void ParticleSystem::newTimeStepStates(double oldDt, double newDt){
 
 size_t ParticleSystem::step(){
   clock_t tic = clock();
-  resetLists();
-  populateLists();
-  float setup = (clock()-tic)/float(CLOCKS_PER_SEC);
-  tic = clock();
+  if (collisions){
+    resetLists();
+    populateLists();
+    float setup = (clock()-tic)/float(CLOCKS_PER_SEC);
+    tic = clock();
 
-  for (int a = 0; a < Nc; a++){
-    for (int b = 0; b < Nc; b++){
+    for (int a = 0; a < Nc; a++){
+      for (int b = 0; b < Nc; b++){
 
-      // draw it out, we can get away without
-      //  checking some cells! Left commented here for
-      //  understanding
-      cellCollisions(a,b,a,b);
-      //cellCollisions(a,b,a-1,b-1);
-      //cellCollisions(a,b,a-1,b+1);
-      cellCollisions(a,b,a+1,b+1);
-      cellCollisions(a,b,a+1,b-1);
-      //cellCollisions(a,b,a-1,b);
-      cellCollisions(a,b,a+1,b);
-      //cellCollisions(a,b,a,b-1);
-      cellCollisions(a,b,a,b+1);
+        // draw it out, we can get away without
+        //  checking some cells! Left commented here for
+        //  understanding
+        cellCollisions(a,b,a,b);
+        //cellCollisions(a,b,a-1,b-1);
+        //cellCollisions(a,b,a-1,b+1);
+        cellCollisions(a,b,a+1,b+1);
+        cellCollisions(a,b,a+1,b-1);
+        //cellCollisions(a,b,a-1,b);
+        cellCollisions(a,b,a+1,b);
+        //cellCollisions(a,b,a,b-1);
+        cellCollisions(a,b,a,b+1);
 
+      }
     }
+    float col = (clock()-tic)/float(CLOCKS_PER_SEC);
   }
 
-  float col = (clock()-tic)/float(CLOCKS_PER_SEC);
   tic = clock();
 
   double cc = drag*dt/2.0;
@@ -199,8 +201,8 @@ size_t ParticleSystem::step(){
     uint32_t nal = 0;
     uint32_t nat = 0;
 
-    double nx = 0.0;
-    double ny = 0.0;
+    double nx = std::cos(state[i*3+2]);
+    double ny = std::sin(state[i*3+2]);
     double dtheta = 0.0;
     
     double normR = 0.0;
@@ -229,7 +231,6 @@ size_t ParticleSystem::step(){
           // repel
           interactions[i*6] -= repelStrength*mx;
           interactions[i*6+1] -= repelStrength*my;
-          normR += repelStrength;
         } 
         else if (nr == 0 && alignDistance > 0.0 && d2 >= rd && d2 < ra){
           double d = sqrt(d2);
@@ -246,7 +247,6 @@ size_t ParticleSystem::step(){
           if (v==0){continue;}
           interactions[i*6+2] += alignStrength*vjx/v;
           interactions[i*6+3] += alignStrength*vjy/v;
-          normAl += alignStrength;
         }
         else if (nr == 0 && attractDistance > 0.0 && d2 >= rd && d2 >= ra && d2 < rat){
           double d = sqrt(d2);
@@ -259,27 +259,36 @@ size_t ParticleSystem::step(){
           //attract
           interactions[i*6+4] += attractStrength*mx;
           interactions[i*6+5] += attractStrength*my;
-          normAt += attractStrength;
         }
       }
     }
 
+    double dx = 0.0;
+    double dy = 0.0;
+
+    normR = std::sqrt(interactions[i*6]*interactions[i*6]+interactions[i*6+1]*interactions[i*6+1]);
+    normAl = std::sqrt(interactions[i*6+2]*interactions[i*6+2]+interactions[i*6+3]*interactions[i*6+3]);
+    normAt = std::sqrt(interactions[i*6+4]*interactions[i*6+4]+interactions[i*6+5]*interactions[i*6+5]);
+
     if (normR > 0){
-      nx = interactions[i*6]/normR;
-      ny = interactions[i*6+1]/normR;
+      dx = interactions[i*6]/normR;
+      dy = interactions[i*6+1]/normR;
     }
     else if (normAl > 0 && normAt > 0){
-      nx = alignmentPreference*interactions[i*6+2]/normAl+(1.0-alignmentPreference)*interactions[i*6+4]/normAt;
-      ny = alignmentPreference*interactions[i*6+3]/normAl+(1.0-alignmentPreference)*interactions[i*6+5]/normAt;
+      dx = alignmentPreference*interactions[i*6+2]/normAl+(1.0-alignmentPreference)*interactions[i*6+4]/normAt;
+      dy = alignmentPreference*interactions[i*6+3]/normAl+(1.0-alignmentPreference)*interactions[i*6+5]/normAt;
     }
     else if (normAl > 0 && normAt == 0){
-      nx = interactions[i*6+2]/normAl;
-      ny = interactions[i*6+3]/normAl;
+      dx = interactions[i*6+2]/normAl;
+      dy = interactions[i*6+3]/normAl;
     }
     else if (normAl == 0 && normAt > 0){
-      nx = interactions[i*6+4]/normAt;
-      ny = interactions[i*6+5]/normAt;
+      dx = interactions[i*6+4]/normAt;
+      dy = interactions[i*6+5]/normAt;
     }
+
+    nx = dx;
+    ny = dy;
 
     double speedMultiplier = 1.0;
 
@@ -309,6 +318,7 @@ size_t ParticleSystem::step(){
     if(nr > 0 || nal > 0 || nat > 0){
       dtheta = std::cos(state[i*3+2])*ny - std::sin(state[i*3+2])*nx;
     }
+    dtheta += std::fmod(normal(generator)*rotationalDiffusion,2.0*M_PI);
 
     
     noise[i*2+1] = noise[i*2];
@@ -338,7 +348,7 @@ size_t ParticleSystem::step(){
 
     state[i*3] = 2.0*bt*x - at*xp + (bt*dtdt/parameters[i*2+1])*ax;
     state[i*3+1] = 2.0*bt*y - at*yp + (bt*dtdt/parameters[i*2+1])*ay;
-    state[i*3+2] = 2.0*br*theta - ar*thetap + (br*dtdt/momentOfInertia)*atheta + (br*dt/(2.0*momentOfInertia))*(noise[i*2]+noise[i*2+1])*dt*rotationalDrag*D;
+    state[i*3+2] = 2.0*br*theta - ar*thetap + (br*dtdt/momentOfInertia)*atheta;//+ (br*dt/(2.0*momentOfInertia))*(noise[i*2]+noise[i*2+1])*dt*rotationalDrag*D;
 
     lastState[i*3] = x;
     lastState[i*3+1] = y;
@@ -514,7 +524,7 @@ const float maxResponseRate = 2.0;
 const float maxRepelStrength = 1.0;
 const float maxAlignStrength = 1.0;
 const float maxAttractStrength = 1.0;
-const float maxDiffusion = M_PI;
+const float maxDiffusion = 0.2;
 const float v0 = 20.0;
 const float maxInertia = 1.0;
 
