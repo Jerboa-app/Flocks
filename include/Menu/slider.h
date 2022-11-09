@@ -11,7 +11,7 @@ public:
 
   Slider(float x, float y, float w, float h, std::string l)
   : xPosition(x), yPosition(y), width(w), height(h),
-  position(0.0), label(l), dragging(false), smoothChange(false), period(60), rate(0.0), smoothChanging(false)
+  position(0.0), label(l), dragging(false), smoothChange(false), period(60), rate(0.0), smoothChanging(false), enabled(true)
   {
     initialiseGL();
   }
@@ -51,6 +51,8 @@ public:
     rate = r;
   }
 
+  void setEnabled(bool b){enabled=b;}
+
 private:
 
   std::string label;
@@ -67,6 +69,8 @@ private:
   float clickX;
   float clickY;
   bool dragging;
+
+  bool enabled;
 
   bool smoothChange;
   bool smoothChanging;

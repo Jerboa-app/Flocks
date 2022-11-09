@@ -334,14 +334,14 @@ int main(){
       }
     }
 
+    sliders.setEnabled("repDist",!vicsek.getState());
+    sliders.setEnabled("attrDist",!vicsek.getState());
+    sliders.setEnabled("pref",!vicsek.getState());
+
     float value = sliders.getPosition("repDist");
     particles.setParameter(ParticleSystem::Parameter::RepelDistance,value);
     sliders.setLabel("repDist","Repel Distance "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
-
-    value = sliders.getPosition("alignDist");
-    particles.setParameter(ParticleSystem::Parameter::AlignDistance,value);
-    sliders.setLabel("alignDist","Align Dist. "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
-
+    
     value = sliders.getPosition("attrDist");
     particles.setParameter(ParticleSystem::Parameter::AttractDistance,value);
     sliders.setLabel("attrDist","Attract Dist. "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
@@ -350,8 +350,13 @@ int main(){
     particles.setParameter(ParticleSystem::Parameter::AlignPreference,value);
     sliders.setLabel("pref","Align/Attract Preference: "+fixedLengthNumber(value,3));
 
+    value = sliders.getPosition("alignDist");
+    particles.setParameter(ParticleSystem::Parameter::AlignDistance,value);
+    sliders.setLabel("alignDist","Align Dist. "+fixedLengthNumber(value*MAX_INTERACTION_RANGE,3));
+
     value = sliders.getPosition("diff");
     particles.setParameter(ParticleSystem::Parameter::Diffusion,value);
+    sliders.setLabel("diff","Diffusion "+fixedLengthNumber(value*maxDiffusion*180.0/M_PI,3)+" (deg)");
 
     value = sliders.getPosition("speed");
     particles.setParameter(ParticleSystem::Parameter::Speed,value);

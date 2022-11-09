@@ -3,6 +3,7 @@
 bool Slider::clicked(float x, float y){
   // assumes axis aligned
   if (smoothChanging){return false;}
+  if (!enabled){return false;}
   if (xPosition <= x && x <= xPosition+width && yPosition <= y && y <= yPosition+height){
     clickX = x; clickY = y;
     if (!smoothChange){
@@ -24,6 +25,7 @@ bool Slider::clicked(float x, float y){
 void Slider::drag(float x, float y){
   if (smoothChanging){return;}
   if (dragging == false){return;}
+  if (!enabled){return;}
   // assumes axis aligned
   if (x < xPosition){
     setPosition(0);
@@ -92,14 +94,16 @@ void Slider::draw(
     &projection[0][0]
   );
 
+  double alpha = enabled ? 1.0 : 0.33;
+
   glUniform4f(
     glGetUniformLocation(sliderShader,"frameColour"),
-    0.0,0.0,0.0,1.0
+    0.0,0.0,0.0,1.0*alpha
   );
 
   glUniform4f(
     glGetUniformLocation(sliderShader,"fillColour"),
-    0.0,0.0,1.0,0.33
+    0.0,0.0,1.0,0.33*alpha
   );
 
   float pixelStart = xPosition;

@@ -264,7 +264,7 @@ size_t ParticleSystem::step(){
         double d2 = rx*rx+ry*ry;
         if (d2 == 0){continue;}
 
-        if (repelDistance > 0.0 && d2 < rd){
+        if (!vicsek && repelDistance > 0.0 && d2 < rd){
           nr += 1;
           double d = sqrt(d2);
           double mx = rx/d; double my = ry/d;
@@ -272,7 +272,7 @@ size_t ParticleSystem::step(){
           interactions[i*6] -= mx;
           interactions[i*6+1] -= my;
         } 
-        else if (nr == 0 && alignDistance > 0.0 && d2 >= rd && d2 < ra){
+        else if (d2 < ra && (vicsek || (!vicsek && nr == 0 && alignDistance > 0.0 && d2 >= rd)) ){
           double d = sqrt(d2);
           double mx = rx/d; double my = ry/d;
           double alpha = std::acos(ctheta*mx+stheta*my);
@@ -288,7 +288,7 @@ size_t ParticleSystem::step(){
           interactions[i*6+2] += vjx/v;
           interactions[i*6+3] += vjy/v;
         }
-        else if (nr == 0 && attractDistance > 0.0 && d2 >= rd && d2 >= ra && d2 < rat){
+        else if (!vicsek && nr == 0 && attractDistance > 0.0 && d2 >= rd && d2 >= ra && d2 < rat){
           double d = sqrt(d2);
           double mx = rx/d; double my = ry/d;
           double alpha = std::acos(ctheta*mx+stheta*my);
@@ -601,7 +601,7 @@ const float v0 = 20.0;
 const float maxInertia = 1.0;
 
 void ParticleSystem::setParameter(Parameter p, double value){
-  double dc = MAX_INTERACTION_RANGE*radius;//std::sqrt(Lx*Lx+Ly*Ly);
+  double dc = MAX_INTERACTION_RANGE*radius;
   switch (p){
     case RepelDistance:
       repelDistance = dc*value;

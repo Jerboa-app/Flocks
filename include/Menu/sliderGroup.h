@@ -71,6 +71,12 @@ public:
         }
     }
 
+    void setEnabled(std::string name, bool enabled){
+        if (sliders.find(name)!=sliders.end()){
+            return sliders[name].setEnabled(enabled);
+        }
+    }
+
 private:
     std::map<std::string,Slider> sliders;  
     glm::mat4 proj;
