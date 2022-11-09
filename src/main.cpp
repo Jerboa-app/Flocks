@@ -153,7 +153,7 @@ int main(){
   std::uniform_real_distribution<double> U(0.0,1.0);
 
   sliders.setPosition("particles",0.25);
-  sliders.setPosition("repDist",0.025);
+  sliders.setPosition("repDist",0.01);
   sliders.setPosition("alignDist",U(generator));
   sliders.setPosition("attrDist",U(generator));
   sliders.setPosition("pref",0.5);
@@ -173,6 +173,10 @@ int main(){
   CheckButton colours(8.0*2+x*6.0,resY-32.0*2.0,8.0,8.0,"Colours",30);
   colours.setState(true);
   colours.setProjection(textProj);
+
+  CheckButton periodic(8.0*2+x*7.0,resY-32.0*2.0,8.0,8.0,"Periodic Bounds",30);
+  periodic.setState(true);
+  periodic.setProjection(textProj);
 
   double oldMouseX = 0.0;
   double oldMouseY = 0.0;
@@ -279,6 +283,7 @@ int main(){
         newRecording.clicked(pos.x,resY-pos.y);
         colours.clicked(pos.x,resY-pos.y);
         collisions.clicked(pos.x,resY-pos.y);
+        periodic.clicked(pos.x,resY-pos.y);
 
         // multiply by inverse of current projection
         glm::vec4 worldPos = camera.screenToWorld(pos.x,pos.y);
@@ -362,6 +367,7 @@ int main(){
 
         particles.setPredatorActive(predatorActive);
         particles.setCollisions(collisions.getState());
+        particles.setPeriodic(periodic.getState());
         if (predatorActive){
             std::vector<double> s = predator.getState();
             particles.predatorState(s[0],s[1],s[2],s[3],predator.getRadius());
@@ -504,6 +510,11 @@ int main(){
       0.25f
     );
 
+    periodic.draw(
+      textRenderer,
+      OD,
+      0.25f
+    );
     if(pause && !startUp){
       textRenderer.renderText(
         OD,

@@ -3,7 +3,7 @@
 #include <time.h>
 
 const double MAX_PARTICLE_SPEED = MAX_PREDATOR_SPEED*40.0;
-const double MAX_INTERACTION_RANGE = 40.0;
+const double MAX_INTERACTION_RANGE = 100.0;
 
 void ParticleSystem::resetLists(){
   for (int i = 0; i < Nc*Nc; i++){
@@ -40,6 +40,22 @@ void ParticleSystem::handleCollision(uint64_t i, uint64_t j){
   double rx,ry,dd,d,ddot,mag,fx,fy,nx,ny,vx,vy,rc;
   rx = state[j*3]-state[i*3];
   ry = state[j*3+1]-state[i*3+1];
+
+  if (periodic){
+    if (rx > Lx*0.5){
+      rx -= Lx;
+    }
+    else if (rx <= -Lx*0.5){
+      rx += Lx;
+    }
+    if (ry > Ly*0.5){
+      ry -= Ly;
+    }
+    else if (ry <= -Ly*0.5){
+      ry += Ly;
+    }
+  }
+
   dd = rx*rx+ry*ry;
   rc = parameters[i*2]+parameters[j*2];
   if (dd < rc*rc){
@@ -80,9 +96,18 @@ void ParticleSystem::cellCollisions(
   uint64_t a2,
   uint64_t b2
 ){
-  if (a1 < 0 || a1 >= Nc || b1 < 0 || b1 >= Nc || a2 < 0 || a2 >= Nc || b2 < 0 || b2 >= Nc){
-    return;
+  if (!periodic){
+    if (a1 < 0 || a1 >= Nc || b1 < 0 || b1 >= Nc || a2 < 0 || a2 >= Nc || b2 < 0 || b2 >= Nc){
+      return;
+    }
   }
+  else{
+    a1 = a1 % Nc;
+    a2 = a2 % Nc;
+    b1 = b1 % Nc;
+    b2 = b2 % Nc;
+  }
+
   uint64_t p1 = cells[a1*Nc+b1];
   uint64_t p2 = cells[a2*Nc+b2];
 
@@ -170,7 +195,6 @@ size_t ParticleSystem::step(){
         cellCollisions(a,b,a+1,b);
         //cellCollisions(a,b,a,b-1);
         cellCollisions(a,b,a,b+1);
-
       }
     }
   }
@@ -221,6 +245,22 @@ size_t ParticleSystem::step(){
         if (j==i){continue;}
         double rx = state[j*3]-state[i*3];
         double ry = state[j*3+1]-state[i*3+1];
+
+        if (periodic){
+          if (rx > Lx*0.5){
+            rx -= Lx;
+          }
+          else if (rx <= -Lx*0.5){
+            rx += Lx;
+          }
+          if (ry > Ly*0.5){
+            ry -= Ly;
+          }
+          else if (ry <= -Ly*0.5){
+            ry += Ly;
+          }
+        }
+
         double d2 = rx*rx+ry*ry;
         if (d2 == 0){continue;}
 
@@ -358,48 +398,69 @@ size_t ParticleSystem::step(){
     velocities[i*2] = vx/dt;
     velocities[i*2+1] = vy/dt;
 
-    double ux = 0.0; double uy = 0.0;
-    double newX = state[i*3]; double newY = state[i*3+1];
-    double ang = state[i*3+2];
-    bool flag = false;
-
-    // kill the particles movement if it's outside the box
-    if (state[i*3]-parameters[2*i] < 0 || state[i*3]+parameters[2*i] > Lx){
-      ux = -0.9*vx;
-      ang = std::atan2(vy,ux);
-
-      if (state[i*3]-parameters[2*i] < 0){
-        newX = parameters[2*i];
+    if (periodic){
+      if (state[i*3]<0){
+        state[i*3] += Lx;
+        lastState[i*3] += Lx;
       }
-      else{
-        newX = Lx-parameters[2*i];
+      else if (state[i*3]>Lx){
+        state[i*3] -= Lx;
+        lastState[i*3] -= Lx;
       }
-
-      flag = true;
+      if (state[i*3+1]<0){
+        state[i*3+1] += Ly;
+        lastState[i*3+1] += Ly;
+      }
+      else if (state[i*3+1] > Ly){
+        state[i*3+1] -= Ly;
+        lastState[i*3+1] -= Ly;
+      }
     }
+    else{
 
-    if (state[i*3+1]-parameters[2*i] < 0 || state[i*3+1]+parameters[2*i] > Ly){
-      uy = -0.5*vy;
-      if (flag){
-        ang = std::atan2(uy,ux);
-      }
-      else{
-        ang = std::atan2(uy,vx);
+      double ux = 0.0; double uy = 0.0;
+      double newX = state[i*3]; double newY = state[i*3+1];
+      double ang = state[i*3+2];
+      bool flag = false;
+
+      // kill the particles movement if it's outside the box
+      if (state[i*3]-parameters[2*i] < 0 || state[i*3]+parameters[2*i] > Lx){
+        ux = -0.9*vx;
+        ang = std::atan2(vy,ux);
+
+        if (state[i*3]-parameters[2*i] < 0){
+          newX = parameters[2*i];
+        }
+        else{
+          newX = Lx-parameters[2*i];
+        }
+
         flag = true;
       }
-      if (state[i*3+1]-parameters[2*i] < 0){
-        newY = parameters[2*i];
-      }
-      else{
-        newY = Ly-parameters[2*i];
-      }
-    }
 
-    if (flag){
-      //state[i*3+2] = ang;
-      state[i*3+1] = newY+uy;
-      state[i*3] = newX+ux;
-      //lastState[i*3+2] = state[i*3+2];
+      if (state[i*3+1]-parameters[2*i] < 0 || state[i*3+1]+parameters[2*i] > Ly){
+        uy = -0.5*vy;
+        if (flag){
+          ang = std::atan2(uy,ux);
+        }
+        else{
+          ang = std::atan2(uy,vx);
+          flag = true;
+        }
+        if (state[i*3+1]-parameters[2*i] < 0){
+          newY = parameters[2*i];
+        }
+        else{
+          newY = Ly-parameters[2*i];
+        }
+      }
+
+      if (flag){
+        //state[i*3+2] = ang;
+        state[i*3+1] = newY+uy;
+        state[i*3] = newX+ux;
+        //lastState[i*3+2] = state[i*3+2];
+      }
     }
   }
 
