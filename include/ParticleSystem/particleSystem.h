@@ -33,7 +33,7 @@ public:
     rotationalDiffusion(0.1),dt(dt),collisionTime(5*dt),
     repelDistance(0.0), alignDistance(0.0*std::sqrt(density/(N*M_PI))), attractDistance(20.0),
     responseRate(1.0), blindAngle(M_PI/4.0),
-    alignmentPreference(0.5), Lx(Lx), Ly(Ly), collisions(true), periodic(false)
+    alignmentPreference(0.5), Lx(Lx), Ly(Ly), collisions(true), periodic(false), vicsek(false)
   {
 
     floatState = new float [N*4];
@@ -152,6 +152,7 @@ public:
   void setPredatorActive(bool b){predatorActive = b;}
   void setCollisions(bool b){collisions = b;}
   void setPeriodic(bool b){periodic = b;}
+  void setVicsek(bool b){vicsek=b;}
 
 private:
 
@@ -181,8 +182,11 @@ private:
   double restorationCoefficient;
   double coefficientOfRestitution;
   double collisionTime;
-  double collisions;
-  double periodic;
+  
+  bool collisions;
+  bool periodic;
+  bool vicsek;
+  
 
   double alpha;
   double beta;

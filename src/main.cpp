@@ -162,21 +162,25 @@ int main(){
   sliders.setPosition("resp",0.5);
   sliders.setPosition("blind",0.031831); // 0.2 rad
   
-  Button newRecording(resX-64.0,resY-48.0,8.0,8.0,"Record",30);
+  Button newRecording(resX-64.0,resY-32.0*2.0,8.0,8.0,"Record",30);
   newRecording.setState(false);
   newRecording.setProjection(textProj);
 
-  CheckButton collisions(8.0*2+x*5.0,resY-32.0*2.0,8.0,8.0,"Collisions",30);
+  CheckButton collisions(8.0*2+x*6.0,resY-32.0,8.0,8.0,"Collisions",30);
   collisions.setState(true);
   collisions.setProjection(textProj);
 
-  CheckButton colours(8.0*2+x*6.0,resY-32.0*2.0,8.0,8.0,"Colours",30);
+  CheckButton colours(8.0*2+x*7.0,resY-32.0,8.0,8.0,"Colours",30);
   colours.setState(true);
   colours.setProjection(textProj);
 
-  CheckButton periodic(8.0*2+x*7.0,resY-32.0*2.0,8.0,8.0,"Periodic Bounds",30);
+  CheckButton periodic(8.0*2+x*5.0,resY-32.0*2.0,8.0,8.0,"Periodic Bounds",30);
   periodic.setState(true);
   periodic.setProjection(textProj);
+
+  CheckButton vicsek(8.0*2+x*6,resY-32.0*2.0,8.0,8.0,"Vicsek Model",30);
+  vicsek.setState(true);
+  vicsek.setProjection(textProj);
 
   double oldMouseX = 0.0;
   double oldMouseY = 0.0;
@@ -284,6 +288,7 @@ int main(){
         colours.clicked(pos.x,resY-pos.y);
         collisions.clicked(pos.x,resY-pos.y);
         periodic.clicked(pos.x,resY-pos.y);
+        vicsek.clicked(pos.x,resY-pos.y);
 
         // multiply by inverse of current projection
         glm::vec4 worldPos = camera.screenToWorld(pos.x,pos.y);
@@ -368,6 +373,7 @@ int main(){
         particles.setPredatorActive(predatorActive);
         particles.setCollisions(collisions.getState());
         particles.setPeriodic(periodic.getState());
+        particles.setVicsek(vicsek.getState());
         if (predatorActive){
             std::vector<double> s = predator.getState();
             particles.predatorState(s[0],s[1],s[2],s[3],predator.getRadius());
@@ -378,6 +384,7 @@ int main(){
         pRender.updatedTrack(particles);
 
         if (predatorActive){
+          predator.setPeriodic(periodic.getState());
           predator.step(speed*dt/subSamples);
         }
 
@@ -515,6 +522,13 @@ int main(){
       OD,
       0.25f
     );
+
+    vicsek.draw(
+      textRenderer,
+      OD,
+      0.25f
+    );
+
     if(pause && !startUp){
       textRenderer.renderText(
         OD,

@@ -104,47 +104,68 @@ void Predator::step(double dt){
     y = yn;
     theta = thetan;
 
-    double ux = 0.0; double uy = 0.0;
-    double newX = x; double newY = y;
-    double ang = theta;
-    bool flag = false;
-
-    if (x-radius < 0 || x+radius > Lx){
-      ux = -0.9*vx;
-      ang = std::atan2(vy,ux);
-
-      if (x-radius < 0){
-        newX = radius;
+    if (periodic){
+      if (x<0){
+        x += Lx;
+        xp += Lx;
       }
-      else{
-        newX = Lx-radius;
+      else if (x>Lx){
+        x -= Lx;
+        xp -= Lx;
       }
-
-      flag = true;
+      if (y<0){
+        y += Ly;
+        yp += Ly;
+      }
+      else if (y > Ly){
+        y -= Ly;
+        yp -= Ly;
+      }
     }
+    else{
 
-    if (y-radius < 0 || y+radius > Ly){
-      uy = -0.5*vy;
-      if (flag){
-        ang = std::atan2(uy,ux);
-      }
-      else{
-        ang = std::atan2(uy,vx);
+      double ux = 0.0; double uy = 0.0;
+      double newX = x; double newY = y;
+      double ang = theta;
+      bool flag = false;
+
+      if (x-radius < 0 || x+radius > Lx){
+        ux = -0.9*vx;
+        ang = std::atan2(vy,ux);
+
+        if (x-radius < 0){
+          newX = radius;
+        }
+        else{
+          newX = Lx-radius;
+        }
+
         flag = true;
       }
-      if (y-radius < 0){
-        newY = radius;
-      }
-      else{
-        newY = Ly-radius;
-      }
-    }
 
-    if (flag){
-      theta = ang;
-      y = newY+uy;
-      x = newX+ux;
-      thetap = theta;
+      if (y-radius < 0 || y+radius > Ly){
+        uy = -0.5*vy;
+        if (flag){
+          ang = std::atan2(uy,ux);
+        }
+        else{
+          ang = std::atan2(uy,vx);
+          flag = true;
+        }
+        if (y-radius < 0){
+          newY = radius;
+        }
+        else{
+          newY = Ly-radius;
+        }
+      }
+
+      if (flag){
+        theta = ang;
+        y = newY+uy;
+        x = newX+ux;
+        thetap = theta;
+      }
     }
 
     vertices[0] = x;

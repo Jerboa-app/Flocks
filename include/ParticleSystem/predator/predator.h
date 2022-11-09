@@ -61,6 +61,7 @@ class Predator {
         }
 
         double getRadius(){return radius;}
+        void setPeriodic(bool b){periodic=b;}
 
     private:
 
@@ -81,6 +82,8 @@ class Predator {
     double mass;
     double momentOfInertia;
     double rotationalDrag;
+
+    bool periodic;
 
     double torque;
 

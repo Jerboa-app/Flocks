@@ -335,6 +335,22 @@ size_t ParticleSystem::step(){
     if (predatorActive){
       double px = state[i*3]-predX;
       double py = state[i*3+1]-predY;
+
+      if (periodic){
+          if (px > Lx*0.5){
+            px -= Lx;
+          }
+          else if (px <= -Lx*0.5){
+            px += Lx;
+          }
+          if (py > Ly*0.5){
+            py -= Ly;
+          }
+          else if (py <= -Ly*0.5){
+            py += Ly;
+          }
+      }
+
       double d2 = px*px+py*py;
       double vp = (predVx*predVx+predVy*predVy);
       double d = std::sqrt(d2);
