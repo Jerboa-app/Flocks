@@ -11,3 +11,5 @@ Jerboa
 *.json
 parameters*
 trajectory*
+release
+build

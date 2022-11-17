@@ -77,6 +77,18 @@ public:
         }
     }
 
+    void smoothChangeTo(std::string name, float to, uint64_t p = 60, float r = 0.0){
+        if (sliders.find(name)!=sliders.end()){
+            sliders[name].smoothChangeTo(to,p,r);
+        }
+    }
+
+    void setSmoothChange(std::string name, bool b, uint64_t p = 60, float r = 0.0){
+        if (sliders.find(name)!=sliders.end()){
+            sliders[name].setSmoothChange(b,p,r);
+        }
+    }
+
 private:
     std::map<std::string,Slider> sliders;  
     glm::mat4 proj;

@@ -9,12 +9,13 @@
 #include <thread>
 
 struct State {
-  State (double x, double y, double r)
-  : x(x), y(y), radius(r)
+  State (double x, double y, double r, double t)
+  : x(x), y(y), radius(r), theta(t)
   {}
   double x;
   double y;
   double radius;
+  double theta;
 };
 
 struct Parameters {
@@ -28,11 +29,11 @@ struct Parameters {
     double attrd,
     double diff,
     double v0,
-    double inertia,
-    double response
+    double response,
+    double blind
     )
   : restitution(re), nParticles(n), order(o), speed(s), rd(rd),
-  ad(ad), attrd(attrd), diff(diff),v0(v0), inertia(inertia),response(response)
+  ad(ad), attrd(attrd), diff(diff), v0(v0),response(response),blind(blind)
   {}
   double restitution;
   double nParticles;
@@ -43,8 +44,8 @@ struct Parameters {
   double attrd;
   double diff;
   double v0;
-  double inertia;
   double response;
+  double blind;
 };
 
 class Trajectory {

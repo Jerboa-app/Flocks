@@ -1,11 +1,12 @@
 #include <ParticleSystem/trajectory.h>
 
 void Trajectory::takeReading(ParticleSystem & p){
-    std::vector<State> s(p.size(),State(0.0,0.0,0.0));
+    std::vector<State> s(p.size(),State(0.0,0.0,0.0,0.0));
     for (int i = 0; i < p.size(); i++){
         s[i].x = p.state[i*3];
         s[i].y = p.state[i*3+1];
-        s[i].radius = p.parameters[i*2];
+        s[i].theta = p.state[i*3+2];
+        s[i].radius = p.radius;
         size += 1;
     }
     trajectory.push_back(s);
@@ -20,8 +21,8 @@ void Trajectory::takeReading(ParticleSystem & p){
             p.getParameter(ParticleSystem::Parameter::AttractDistance),
             p.getParameter(ParticleSystem::Parameter::Diffusion),
             p.getParameter(ParticleSystem::Parameter::Speed),
-            p.getParameter(ParticleSystem::Parameter::Inertia),
-            p.getParameter(ParticleSystem::Parameter::ResponseRate)
+            p.getParameter(ParticleSystem::Parameter::ResponseRate),
+            p.getParameter(ParticleSystem::Parameter::BlindAngle)
         )
     );
 
@@ -53,8 +54,8 @@ void Trajectory::threadedSave(std::vector<std::vector<State>> trajectory){
             for (int i = 0; i < trajectory[t].size(); i++){
                 out << trajectory[t][i].x << ", "
                     << trajectory[t][i].y << ", "
-                    << trajectory[t][i].radius
-                    << "\n";
+                    << trajectory[t][i].theta << ", "
+                    << trajectory[t][i].radius << "\n";
             }
             out << "\n";
             outParam << parameters[t].restitution << ","
@@ -66,7 +67,7 @@ void Trajectory::threadedSave(std::vector<std::vector<State>> trajectory){
                      << parameters[t].attrd << ","
                      << parameters[t].diff << ","
                      << parameters[t].v0 << ","
-                     << parameters[t].inertia << ","
+                     << parameters[t].blind << ","
                      << parameters[t].response << "\n";
 
         }
