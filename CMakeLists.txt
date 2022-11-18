@@ -27,16 +27,15 @@ target_link_libraries(glew
 )
 
 if (WINDOWS)
-
     option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
     add_compile_definitions(WINDOWS)
+    add_link_options(-mwindows)
     set(SFML_DIR "include/SFML-2.5.1-mingw64/lib/cmake/SFML/")
 
 else ()
-
     set(SFML_STATIC_LIBRARIES TRUE)
     set(SFML_DIR "include/SFML-2.5.1/build")
-
+    add_link_options(-no-pie)
 endif()
 
 find_package(SFML 2.5.1 COMPONENTS system window graphics audio REQUIRED)
