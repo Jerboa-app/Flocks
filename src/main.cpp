@@ -33,6 +33,9 @@
 #include <math.h>
 #include <vector>
 
+std::string buildTime = TIMESTAMP;
+std::string buildType = BUILD_TYPE;
+
 const int resX = 1000;
 const int resY = 1000;
 
@@ -517,7 +520,9 @@ int main(){
         "\n" <<
         "Camera [world] (" << fixedLengthNumber(cameraX,4) << ", " << fixedLengthNumber(cameraY,4) << ")" <<
         "\n" <<
-        "Order: " << fixedLengthNumber(particles.orderParameter(),6) << "\n";
+        "Order: " << fixedLengthNumber(particles.orderParameter(),6) <<
+        "\n" <<
+        "Build: " << buildTime << " " << buildType << "\n";
       textRenderer.renderText(
         OD,
         debugText.str(),

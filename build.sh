@@ -1,16 +1,19 @@
 #!/bin/bash
 WINDOWS=1
 OSX=1
+RELEASE=0
 while [[ $# -gt 0 ]]; do
   case $1 in
     -w|--windows)
       WINDOWS=0
       shift # past argument
-      shift # past value
       ;;
     -o|--osx)
       OSX=0
       shift
+      ;;
+    -r|--release)
+      RELEASE=1
       shift
       ;;
     -*|--*)
@@ -37,15 +40,17 @@ do
   fi
 done
 
+echo "release ${RELEASE}"
+
 if [[ $WINDOWS -eq 0 ]];
 then 
   cmake -E make_directory build
-  cmake -E chdir build cmake .. -D WINDOWS=ON -D CMAKE_TOOLCHAIN_FILE=./windows.cmake && make -C build
+  cmake -E chdir build cmake .. -D WINDOWS=ON -D RELEASE=$RELEASE -D CMAKE_TOOLCHAIN_FILE=./windows.cmake && make -C build
 elif [[ $OSX -eq 0 ]];
 then
   cmake -E make_directory build
-  cmake -E chdir build cmake .. -D OSX=ON -D CMAKE_TOOLCHAIN_FILE=./osx.cmake && make -C build
+  cmake -E chdir build cmake .. -D OSX=ON -D RELEASE=$RELEASE -D CMAKE_TOOLCHAIN_FILE=./osx.cmake && make -C build
 else
   cmake -E make_directory build
-  cmake -E chdir build cmake .. && make -C build
+  cmake -E chdir build cmake -D RELEASE=$RELEASE .. && make -C build
 fi

@@ -2,8 +2,22 @@ cmake_minimum_required(VERSION 3.1)
 project(Jerboa)
 
 option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+option(RELEASE On)
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_BUILD_TYPE Release)
+if (RELEASE)
+    set(CMAKE_BUILD_TYPE MinSizeRel)
+else()
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+string(TIMESTAMP TODAY "%Y-%m-%d:%H:%M:%S")
+add_compile_definitions(TIMESTAMP="${TODAY}")
+
+if (RELEASE)
+    add_compile_definitions(BUILD_TYPE="Release")
+else ()
+    add_compile_definitions(BUILD_TYPE="Debug")
+endif ()
 
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O3")
 set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
@@ -25,16 +39,19 @@ add_library(glew SHARED ${GLEW_SOURCE} ${GLEW_INCLUDE})
 target_link_libraries(glew
 	${OPENGL_LIBRARY}
 )
-
 if (WINDOWS)
     option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
     add_compile_definitions(WINDOWS)
-    add_link_options(-mwindows)
+    if (RELEASE)
+        # launch as windows, not console app - so cmd does not open as well
+        add_link_options(-mwindows)
+    endif ()
     set(SFML_DIR "include/SFML-2.5.1-mingw64/lib/cmake/SFML/")
 
 else ()
     set(SFML_STATIC_LIBRARIES TRUE)
     set(SFML_DIR "include/SFML-2.5.1/build")
+    # so nautilus etc recognise target as executable rather than .so
     add_link_options(-no-pie)
 endif()
 
