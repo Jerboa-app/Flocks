@@ -607,7 +607,7 @@ void ParticleSystem::removeParticle(uint64_t i){
 }
 
 const float maxResponseRate = M_PI/4.0;
-const float maxDiffusion = M_PI;
+const float maxDiffusion = 2.0*M_PI;
 const float v0 = 20.0;
 const float maxInertia = 1.0;
 

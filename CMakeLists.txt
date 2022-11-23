@@ -1,57 +1,66 @@
 cmake_minimum_required(VERSION 3.1)
 project(Jerboa)
 
-set(BUILD_SHARED_LIBRARY FALSE)
+option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
+option(RELEASE On)
 set(CMAKE_CXX_STANDARD 14)
-set(CMAKE_BUILD_TYPE Release)
-
-if (WINDOWS)
-
-    # TODO, cross compile is borked... need freetype lib
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O3 -D WINDOWS")
-    set(SFML_DIR "include/SFML-2.5.1-mingw64/lib/cmake/SFML/")
-
-    set(FREETYPE_INCLUDE_DIR ${PROJECT_SOURCE_DIR}/include/freetype2)
-    set(FREETYPE_LIBRARY ${PROJECT_SOURCE_DIR}/include/SFML-2.5.1-mingw64/lib)
-
-    find_package(OpenGL REQUIRED)
-    find_package(SFML 2.5.1 COMPONENTS system window graphics audio REQUIRED)
-    include_directories(include ${OPENGL_INCLUDE_DIRS})
-
-    add_executable(Jerboa src/main.cpp)
-
-    target_link_libraries(Jerboa sfml-system sfml-window sfml-graphics sfml-audio ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
-
-else ()
-
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O3")
-    set(SFML_STATIC_LIBRARIES TRUE)
-    set(SFML_DIR "include/SFML-2.5.1/build")
-    message("SFML",${SFML_DIR})
-    set(GLEW_LIBRARIES "${PROJECT_SOURCE_DIR}/lib/libGLEW.a")
-
-    set(FREETYPE_STATIC_LIBRARIES TRUE)
-    set(PNG_STATIC_LIBRARIES TRUE)
-    set(ZLIB_STATIC_LIBRARIES TRUE)
-
-    set(FREETYPE_INCLUDE_DIRS "${PROJECT_SOURCE_DIR}/include/freetype")
-    set(FREETYPE_LIBRARIES "${PROJECT_SOURCE_DIR}/lib/libfreetype.a")
-
-    set(ZLIB_LIBRARIES "${PROJECT_SOURCE_DIR}/lib/libz.a")
-    set(PNG_LIBRARIES "${PROJECT_SOURCE_DIR}/lib/libpng16.a")
-
-    find_package(OpenGL REQUIRED)
-    find_package(SFML 2.5.1 COMPONENTS system window graphics audio REQUIRED)
-    include_directories(include ${OPENGL_INCLUDE_DIRS} ${ZLIB_INCLUDE_DIRS} ${PNG_INCLUDE_DIRS} ${FREETYPE_INCLUDE_DIRS})
-
-    add_executable(Jerboa src/main.cpp)
-
-    target_link_libraries(Jerboa sfml-system sfml-window sfml-graphics sfml-audio ${FREETYPE_LIBRARIES} ${PNG_LIBRARIES} ${ZLIB_LIBRARIES} ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})
-
+if (RELEASE)
+    set(CMAKE_BUILD_TYPE Release)
+else()
+    set(CMAKE_BUILD_TYPE Debug)
 endif()
 
-# find_package(MPI)
-# include_directories(SYSTEM ${MPI_INCLUDE_PATH})
-# add_executable(phase src/phase.cpp)
-# target_link_libraries(phase ${MPI_C_LIBRARIES})
+string(TIMESTAMP TODAY "%Y-%m-%d:%H:%M:%S")
+add_compile_definitions(TIMESTAMP="${TODAY}")
+
+if (RELEASE)
+    add_compile_definitions(BUILD_TYPE="Release")
+else ()
+    add_compile_definitions(BUILD_TYPE="Debug")
+endif ()
+
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread -O3")
+set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
+set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
+
+set(FREETYPE_STATIC_LIBRARIES TRUE)
+set(GLM_STATIC_LIBRARIES TRUE)
+
+add_subdirectory(include/vendored/freetype)
+add_subdirectory(include/vendored/glm)
+
+find_package(OpenGL REQUIRED)
+
+set(GLEW_SOURCE include/vendored/glew/src/glew.c)
+set(GLEW_INCLUDE include/vendored/glew/include/)
+
+include_directories(include ${OPENGL_INCLUDE_DIRS} ${GLEW_INCLUDE})
+
+add_library(glew SHARED ${GLEW_SOURCE} ${GLEW_INCLUDE})
+
+target_link_libraries(glew
+	${OPENGL_LIBRARY}
+)
+if (WINDOWS)
+    add_compile_definitions(WINDOWS)
+    if (RELEASE)
+        # launch as windows, not console app - so cmd does not open as well
+        add_link_options(-mwindows)
+    endif ()
+    set(SFML_USE_STATIC_STD_LIBS FALSE)
+    set(SFML_STATIC_LIBRARIES FALSE)
+    set(SFML_DIR "include/SFML-2.5.1-mingw64/lib/cmake/SFML/")
+
+else ()
+    set(SFML_STATIC_LIBRARIES TRUE)
+    set(SFML_DIR "include/SFML-2.5.1/build")
+    # so nautilus etc recognise target as executable rather than .so
+    add_link_options(-no-pie)
+endif()
+
+find_package(SFML 2.5.1 COMPONENTS system window graphics audio REQUIRED)
+
+add_executable(Jerboa src/main.cpp)
+
+target_link_libraries(Jerboa glew freetype glm sfml-system sfml-window sfml-graphics sfml-audio ${GLEW_LIBRARIES} ${OPENGL_LIBRARIES})

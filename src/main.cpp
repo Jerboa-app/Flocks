@@ -1,12 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <iomanip>
-
-#if WINDOWS
-  #include <glew.c>
-#else
-  #include <glew.h>
-#endif
+#include <GL/glew.h>
 
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
@@ -37,6 +32,9 @@
 #include <iostream>
 #include <math.h>
 #include <vector>
+
+std::string buildTime = TIMESTAMP;
+std::string buildType = BUILD_TYPE;
 
 const int resX = 1000;
 const int resY = 1000;
@@ -161,6 +159,10 @@ int main(){
   sliders.setPosition("speed",0.5);
   sliders.setPosition("resp",0.5);
   sliders.setPosition("blind",0.031831); // 0.2 rad
+
+  // sliders.setSmoothChange("repDist",true,60*10,1.0);
+  // sliders.setSmoothChange("alignDist",true,60*10,1.0);
+  // sliders.setSmoothChange("attrDist",true,60*10,1.0);
   
   Button newRecording(resX-64.0,resY-32.0*2.0,8.0,8.0,"Record",30);
   newRecording.setState(false);
@@ -225,6 +227,10 @@ int main(){
         debug = !debug;
       }
 
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Num1){
+        sliders.setPosition("particles",1.0/float(N));
+      }
+
       if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Space){
         pause = !pause;
         if (startUp){
@@ -232,6 +238,52 @@ int main(){
         }
       }
 
+      bool shift = sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || sf::Keyboard::isKeyPressed(sf::Keyboard::RShift);
+
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::A && !shift){
+        if (sliders.getPosition("alignDist")<0.5){
+          sliders.smoothChangeTo("alignDist",0.5,60*20,1.0);
+        }
+        else{
+          sliders.smoothChangeTo("alignDist",0.0,60*20,1.0);
+        }
+      }
+
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::R){
+        if (sliders.getPosition("repDist")<0.1){
+          sliders.smoothChangeTo("repDist",0.1,60*30,0.0);
+        }
+        else{
+          sliders.smoothChangeTo("repDist",0.0,60*30,0.0);
+        }
+      }
+
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::D){
+        if (sliders.getPosition("diff")<1.0){
+          sliders.smoothChangeTo("diff",1.0,60*10,0.0);
+        }
+        else{
+          sliders.smoothChangeTo("diff",0.0,60*10,0.0);
+        }
+      }
+
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::A && shift){
+        if (sliders.getPosition("attrDist")<0.5){
+          sliders.smoothChangeTo("attrDist",0.5,60*30,1.0);
+        }
+        else{
+          sliders.smoothChangeTo("attrDist",0.0,60*30,1.0);
+        }
+      }
+
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::B){
+        if (sliders.getPosition("blind")<1.0){
+          sliders.smoothChangeTo("blind",1.0,60*20,1.0);
+        }
+        else{
+          sliders.smoothChangeTo("blind",0.0,60*20,1.0);
+        }
+      }
 
       if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::H){
         speed *= 2.0;
@@ -359,7 +411,7 @@ int main(){
 
     value = sliders.getPosition("diff");
     particles.setParameter(ParticleSystem::Parameter::Diffusion,value);
-    sliders.setLabel("diff","Diffusion "+fixedLengthNumber(value*maxDiffusion*180.0/M_PI,3)+" (deg)");
+    sliders.setLabel("diff","Diffusion "+fixedLengthNumber(value,3));
 
     value = sliders.getPosition("speed");
     particles.setParameter(ParticleSystem::Parameter::Speed,value);
@@ -475,7 +527,9 @@ int main(){
         "\n" <<
         "Camera [world] (" << fixedLengthNumber(cameraX,4) << ", " << fixedLengthNumber(cameraY,4) << ")" <<
         "\n" <<
-        "Order: " << fixedLengthNumber(particles.orderParameter(),6) << "\n";
+        "Order: " << fixedLengthNumber(particles.orderParameter(),6) <<
+        "\n" <<
+        "Build: " << buildTime << " " << buildType << "\n";
       textRenderer.renderText(
         OD,
         debugText.str(),
