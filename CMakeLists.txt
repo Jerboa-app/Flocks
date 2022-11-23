@@ -1,11 +1,11 @@
 cmake_minimum_required(VERSION 3.1)
 project(Jerboa)
 
-option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
+option(BUILD_SHARED_LIBS "Build using shared libraries" OFF)
 option(RELEASE On)
 set(CMAKE_CXX_STANDARD 14)
 if (RELEASE)
-    set(CMAKE_BUILD_TYPE MinSizeRel)
+    set(CMAKE_BUILD_TYPE Release)
 else()
     set(CMAKE_BUILD_TYPE Debug)
 endif()
@@ -24,6 +24,9 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY "${PROJECT_BINARY_DIR}")
 
+set(FREETYPE_STATIC_LIBRARIES TRUE)
+set(GLM_STATIC_LIBRARIES TRUE)
+
 add_subdirectory(include/vendored/freetype)
 add_subdirectory(include/vendored/glm)
 
@@ -40,12 +43,13 @@ target_link_libraries(glew
 	${OPENGL_LIBRARY}
 )
 if (WINDOWS)
-    option(BUILD_SHARED_LIBS "Build using shared libraries" ON)
     add_compile_definitions(WINDOWS)
     if (RELEASE)
         # launch as windows, not console app - so cmd does not open as well
         add_link_options(-mwindows)
     endif ()
+    set(SFML_USE_STATIC_STD_LIBS FALSE)
+    set(SFML_STATIC_LIBRARIES FALSE)
     set(SFML_DIR "include/SFML-2.5.1-mingw64/lib/cmake/SFML/")
 
 else ()

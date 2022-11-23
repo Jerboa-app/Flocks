@@ -276,7 +276,14 @@ int main(){
         }
       }
 
-
+      if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::B){
+        if (sliders.getPosition("blind")<1.0){
+          sliders.smoothChangeTo("blind",1.0,60*20,1.0);
+        }
+        else{
+          sliders.smoothChangeTo("blind",0.0,60*20,1.0);
+        }
+      }
 
       if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::H){
         speed *= 2.0;
